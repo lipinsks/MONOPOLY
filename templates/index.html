@@ -9,34 +9,34 @@
 <body>
     
     <!-- LOBBY SCREEN -->
-    <div id="lobby-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:6000; display:flex; flex-direction:column; align-items:center; padding-top:5vh; color:#fff; overflow-y:auto;">
+    <div id="lobby-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:6000; display:flex; flex-direction:column; align-items:center; padding-top:5vh; color:var(--text-color); overflow-y:auto;">
         <h1 style="color:#d32f2f; font-size:clamp(2rem, 8vw, 3rem); margin-bottom:10px;">MONOPOLY ONLINE</h1>
-        <p style="text-align:center; padding: 0 10px;">Wybierz pokój do gry lub stwórz własny.</p>
+        <p style="text-align:center; padding: 0 10px;">Mozesz grac z prawdziwymi graczami lub botami (AI).<br>W razie problemow po prostu odswiez strone.</p>
         
-        <div style="background:#222; padding:20px; border-radius:10px; width:90%; max-width:600px; margin-bottom:20px; border:2px solid #2196f3; box-sizing: border-box;">
-            <h3 style="margin-top:0;">Stwórz nowy pokój</h3>
+        <div style="background:var(--panel-bg); padding:20px; border-radius:10px; width:90%; max-width:600px; margin-bottom:20px; border:2px solid #2196f3; box-sizing: border-box;">
+            <h3 style="margin-top:0;">Stworz nowy pokoj</h3>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <input type="text" id="new-room-name" placeholder="Nazwa pokoju..." style="flex:1; padding:10px; border-radius:5px; border:none; background:#333; color:#fff; min-width:150px;">
-                <button onclick="createRoom()" class="action-btn" style="background:#4caf50; width:auto; margin:0; padding:10px 20px;">Wejdź</button>
+                <input type="text" id="new-room-name" placeholder="Nazwa pokoju..." style="flex:1; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-color); min-width:150px;">
+                <button onclick="createRoom()" class="action-btn" style="background:#4caf50; width:auto; margin:0; padding:10px 20px;">Wejdz</button>
             </div>
         </div>
 
         <div style="width:90%; max-width:600px;">
             <h3>Aktywne pokoje na serwerze:</h3>
             <ul id="rooms-list" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;">
-                <li style="color:#aaa; text-align:center;">Wczytuję listę...</li>
+                <li style="color:#aaa; text-align:center;">Wczytuje liste...</li>
             </ul>
         </div>
     </div>
 
     <!-- EKRAN KONFIGURACJI -->
-    <div id="setup-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:5000; align-items:center; justify-content:center; color:#fff;">
-        <div style="background:#222; padding:30px; border-radius:10px; width:90%; max-width:400px; text-align:center; border: 2px solid #d32f2f; box-sizing: border-box;">
-            <h2>Pokój: <span id="setup-room-name" style="color:#2196f3;"></span></h2>
+    <div id="setup-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:5000; align-items:center; justify-content:center; color:var(--text-color);">
+        <div style="background:var(--panel-bg); padding:30px; border-radius:10px; width:90%; max-width:400px; text-align:center; border: 2px solid #d32f2f; box-sizing: border-box;">
+            <h2>Pokoj: <span id="setup-room-name" style="color:#2196f3;"></span></h2>
             
             <div id="setup-controls">
-                <p>Ustal liczbę graczy na ten serwer:</p>
-                <select id="setup-count" onchange="generatePlayerInputs()" style="padding:8px; width:100%; background:#333; color:#fff; border-radius:4px; font-size:1rem; margin-bottom:15px;">
+                <p>Ustal liczbe graczy na ten serwer:</p>
+                <select id="setup-count" onchange="generatePlayerInputs()" style="padding:8px; width:100%; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; font-size:1rem; margin-bottom:15px;">
                     <option value="2">2 Graczy</option>
                     <option value="3">3 Graczy</option>
                     <option value="4">4 Graczy</option>
@@ -45,14 +45,14 @@
                 </select>
                 <div id="setup-players-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px; text-align:left;"></div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="leaveRoom()" class="action-btn" style="background:#555; padding:12px; font-size:1.1rem; flex:1; min-width:100px;">Wróć</button>
+                    <button onclick="leaveRoom()" class="action-btn" style="background:#555; padding:12px; font-size:1.1rem; flex:1; min-width:100px;">Wroc</button>
                     <button onclick="submitSetup()" class="action-btn" style="background:#4caf50; padding:12px; font-size:1.1rem; flex:2; min-width:150px;">Rozpocznij</button>
                 </div>
             </div>
 
             <div id="setup-waiting" style="display:none;">
-                <p style="font-size:1.1rem; color:#aaa; margin:20px 0;">Oczekiwanie na rozpoczęcie gry przez hosta pokoju...</p>
-                <button onclick="leaveRoom()" class="action-btn" style="background:#555; padding:12px; font-size:1.1rem; width:100%;">Wróć do Lobby</button>
+                <p style="font-size:1.1rem; color:#aaa; margin:20px 0;">Oczekiwanie na rozpoczecie gry przez hosta pokoju...</p>
+                <button onclick="leaveRoom()" class="action-btn" style="background:#555; padding:12px; font-size:1.1rem; width:100%;">Wroc do Lobby</button>
             </div>
         </div>
     </div>
@@ -66,9 +66,10 @@
         <button class="nav-btn" onclick="switchTab('trade-tab')" style="background:#ff9800; color:black;">Trade</button>
         
         <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-            <label class="mobile-hide" style="color:#fff; font-size:0.9rem;">Grasz jako:</label>
-            <select id="role-select" onchange="changeRole()" style="padding:5px; border-radius:4px; font-weight:bold; max-width: 120px;"></select>
+            <label class="mobile-hide" style="color:var(--text-color); font-size:0.9rem;">Grasz jako:</label>
+            <select id="role-select" onchange="changeRole()" style="padding:5px; border-radius:4px; font-weight:bold; max-width: 120px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color);"></select>
             <button id="btn-restart" class="nav-btn" onclick="restartGame()" style="background:#d32f2f; color:white; display:none;">Restart</button>
+            <button class="nav-btn" onclick="openSettings()" style="background:#607d8b; padding: 6px;">⚙️</button>
         </div>
     </div>
 
@@ -94,55 +95,74 @@
         </div>
 
         <div class="container tab-content" id="inv-tab" style="display: none; overflow-y: auto;">
-            <div style="width: 100%; max-width: 1000px; margin: 20px auto; padding: 20px; background:#222; border-radius:10px; box-sizing: border-box;">
+            <div style="width: 100%; max-width: 1000px; margin: 20px auto; padding: 20px; background:var(--panel-bg); border-radius:10px; box-sizing: border-box;">
                 <h2>Ekwipunek i Hipoteki</h2>
-                <select id="inv-player-select" onchange="renderInventory(true)" style="font-size: 1.2rem; padding: 5px; margin-bottom: 20px; background:#333; color:#fff; border:1px solid #555; border-radius:4px; width:100%;"></select>
+                <select id="inv-player-select" onchange="renderInventory(true)" style="font-size: 1.2rem; padding: 5px; margin-bottom: 20px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; width:100%;"></select>
                 <div id="inv-grid" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content:center;"></div>
             </div>
         </div>
         
         <div class="container tab-content" id="history-tab" style="display: none; overflow-y: auto;">
-            <div style="width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background:#222; border-radius:10px; box-sizing: border-box;">
-                <h2>Pełna Historia Rozgrywki</h2>
+            <div style="width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background:var(--panel-bg); border-radius:10px; box-sizing: border-box;">
+                <h2>Pelna Historia Rozgrywki</h2>
                 <ul id="history-list" style="list-style: none; padding: 0;"></ul>
             </div>
         </div>
         
         <div class="container tab-content" id="trade-tab" style="display: none; overflow-y: auto;">
-            <div style="width: 100%; max-width: 900px; margin: 20px auto; padding: 20px; background:#222; border-radius:10px; box-sizing: border-box;">
+            <div style="width: 100%; max-width: 900px; margin: 20px auto; padding: 20px; background:var(--panel-bg); border-radius:10px; box-sizing: border-box;">
                 <h2>Panel Multi-Wymian</h2>
                 <div style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
                     <div>
                         <label>Wybierz kontrahenta:</label><br>
-                        <select id="trade-target" onchange="updateTradeCheckboxes()" style="padding:8px; width:100%; background:#333; color:#fff; border-radius:4px;"></select>
+                        <select id="trade-target" onchange="updateTradeCheckboxes()" style="padding:8px; width:100%; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px;"></select>
                     </div>
                     <div style="display:flex; gap:20px; flex-wrap:wrap;">
-                        <div style="flex:1; min-width:250px; background:#333; padding:15px; border-radius:8px;">
+                        <div style="flex:1; min-width:250px; background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
                             <h3 style="color:#2196f3; font-size:1.1rem;">Z Twojego portfela:</h3>
                             <div id="trade-offer-tiles" style="max-height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
-                            <label>Dopłata ($):</label><br>
-                            <input type="number" id="trade-offer-money" value="0" min="0" style="padding:6px; width:100%; background:#222; color:#fff; box-sizing: border-box;">
+                            <label>Doplata ($):</label><br>
+                            <input type="number" id="trade-offer-money" value="0" min="0" style="padding:6px; width:100%; background:var(--bg-color); color:var(--text-color); border:1px solid var(--border-color); box-sizing: border-box;">
                         </div>
-                        <div style="flex:1; min-width:250px; background:#333; padding:15px; border-radius:8px;">
+                        <div style="flex:1; min-width:250px; background:var(--card-bg); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
                             <h3 style="color:#f44336; font-size:1.1rem;">Oczekujesz:</h3>
                             <div id="trade-request-tiles" style="max-height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; margin-bottom:10px;"></div>
-                            <label>Gotówka ($):</label><br>
-                            <input type="number" id="trade-request-money" value="0" min="0" style="padding:6px; width:100%; background:#222; color:#fff; box-sizing: border-box;">
+                            <label>Gotowka ($):</label><br>
+                            <input type="number" id="trade-request-money" value="0" min="0" style="padding:6px; width:100%; background:var(--bg-color); color:var(--text-color); border:1px solid var(--border-color); box-sizing: border-box;">
                         </div>
                     </div>
-                    <button onclick="proposeMultiTrade()" class="action-btn" style="background:#ff9800; color:#000; font-size:1.1rem; padding:12px;">Wyślij Ofertę</button>
+                    <button onclick="proposeMultiTrade()" class="action-btn" style="background:#ff9800; color:#000; font-size:1.1rem; padding:12px;">Wyslij Oferte</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="trade-alert" style="display:none; position:fixed; top:70px; right:20px; width:90%; max-width:350px; background:#fff; color:#000; padding:20px; border:4px solid #d32f2f; border-radius:10px; z-index:4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); box-sizing: border-box;">
-        <h3 style="margin-top:0; color:#d32f2f;">Masz ofertę wymiany!</h3>
+    <!-- TRADE MODAL -->
+    <div id="trade-alert" style="display:none; position:fixed; top:70px; right:20px; width:90%; max-width:350px; background:var(--card-bg); color:var(--text-color); padding:20px; border:4px solid #d32f2f; border-radius:10px; z-index:4000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); box-sizing: border-box;">
+        <h3 style="margin-top:0; color:#d32f2f;">Oferta wymiany!</h3>
         <p id="trade-alert-text" style="font-size: 0.9rem; margin-bottom: 10px;"></p>
-        <p style="font-size:0.8rem; color:#666; font-style:italic;">Możesz poruszać się po zakładkach by przeanalizować tę ofertę zanim zniknie.</p>
-        <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-            <button onclick="respondTrade(true)" class="action-btn" style="background:#4caf50;">Zgoda</button>
-            <button onclick="respondTrade(false)" class="action-btn" style="background:#f44336;">Odrzuć</button>
+        <p style="font-size:0.8rem; color:#888; font-style:italic;">Mozesz poruszac sie po zakladkach by przeanalizowac oferte.</p>
+        <div id="trade-alert-buttons" style="display:flex; gap:10px; justify-content:center; margin-top:15px;"></div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content" style="padding: 20px; width: 320px; text-align:left;">
+            <span class="close" onclick="closeSettings()">&times;</span>
+            <h2 style="margin-top:0; color:var(--text-color);">Ustawienia</h2>
+            
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Motyw tła:</label>
+            <select id="theme-select" style="width:100%; padding:8px; margin-bottom:20px; background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color);" onchange="changeTheme()">
+                <option value="system">Systemowy</option>
+                <option value="dark">Ciemny</option>
+                <option value="light">Jasny</option>
+            </select>
+            
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Szybkość AI: <span id="ai-speed-val" style="color:#2196f3;">1.5s</span></label>
+            <input type="range" id="ai-speed-slider" min="0" max="5" step="0.5" value="1.5" style="width:100%; margin-bottom:25px;" oninput="updateSpeedVal()" onchange="saveSpeed()">
+            
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin-bottom:20px;">
+            <button class="action-btn" style="background:#f44336; width:100%; font-size:1.1rem;" onclick="endGame()">Zakończ Grę (Zamknij Pokój)</button>
         </div>
     </div>
 
@@ -150,16 +170,16 @@
     <div id="bottom-console" style="display:none;">
         <div class="console-left">
             <h2 id="console-title" style="margin:0; color:#d32f2f; text-transform:uppercase; font-size:1.1rem;">Tura</h2>
-            <div id="turn-dice-display" style="font-size: 1.5rem; background:#000; padding:5px 15px; border-radius:8px; border: 1px solid #444;">🎲 ?</div>
+            <div id="turn-dice-display" style="font-size: 1.2rem; background:#000; color:#fff; padding:5px 15px; border-radius:8px; border: 1px solid #444;"></div>
             <div id="turn-card-display" style="display:none; background:#ff9800; color:black; padding:5px 10px; font-weight:bold; border-radius: 4px; font-size:0.9rem;"></div>
-            <div id="turn-message-display" style="font-size: 1rem; font-weight:bold; color: #fff;">Oczekiwanie...</div>
+            <div id="turn-message-display" style="font-size: 1rem; font-weight:bold; color: var(--text-color);">Oczekiwanie...</div>
         </div>
         <div id="turn-actions" style="display:flex; gap: 10px; flex-wrap:wrap; justify-content:center;">
-            <button id="modal-btn-roll" onclick="sendAction('ROLL')" class="action-btn" style="background:#2196f3; width:auto; padding:10px 20px;">Rzuć Kością</button>
+            <button id="modal-btn-roll" onclick="sendAction('ROLL')" class="action-btn" style="background:#2196f3; width:auto; padding:10px 20px;">Rzuc</button>
             <button id="modal-btn-jail-pay" onclick="sendAction('JAIL_PAY')" class="action-btn" style="background:#ff9800; color:black; display:none; width:auto; padding:10px 20px;">Kaucja ($50)</button>
-            <button id="modal-btn-jail-roll" onclick="sendAction('JAIL_ROLL')" class="action-btn" style="background:#9c27b0; display:none; width:auto; padding:10px 20px;">Próba ($50)</button>
+            <button id="modal-btn-jail-roll" onclick="sendAction('JAIL_ROLL')" class="action-btn" style="background:#9c27b0; display:none; width:auto; padding:10px 20px;">Proba ($50)</button>
             <button id="modal-btn-buy" onclick="sendAction('BUY')" class="action-btn" style="background:#4caf50; display:none; width:auto; padding:10px 20px;">Kup</button>
-            <button id="modal-btn-pass" onclick="sendAction('PASS')" class="action-btn" style="background:#f44336; display:none; width:auto; padding:10px 20px;">Pomiń</button>
+            <button id="modal-btn-pass" onclick="sendAction('PASS')" class="action-btn" style="background:#f44336; display:none; width:auto; padding:10px 20px;">Pomin</button>
             <button id="modal-btn-ack" onclick="sendAction('ACKNOWLEDGE')" class="action-btn" style="background:#2196f3; display:none; width:auto; padding:10px 20px;">OK</button>
         </div>
     </div>

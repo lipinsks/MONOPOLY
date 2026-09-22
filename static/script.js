@@ -2,6 +2,30 @@ let myPlayerName = localStorage.getItem('monopoly_username') || "Widz";
 let currentRoomId = null;
 let syncInterval = null;
 
+// INIT MOTYWU
+function initTheme() {
+    let savedTheme = localStorage.getItem('monopoly_theme') || 'system';
+    applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+    if (theme === 'system') {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.body.classList.add('theme-light');
+        } else {
+            document.body.classList.remove('theme-light');
+        }
+    } else if (theme === 'light') {
+        document.body.classList.add('theme-light');
+    } else {
+        document.body.classList.remove('theme-light');
+    }
+}
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if(localStorage.getItem('monopoly_theme') === 'system') applyTheme('system');
+});
+
 function switchTab(tabId) {
     document.querySelectorAll('.container').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -21,7 +45,10 @@ function showToast(msg) {
 let playerColors = {};
 let lastState = null;
 
-function init() { showLobby(); }
+function init() { 
+    initTheme();
+    showLobby(); 
+}
 
 function showLobby() {
     currentRoomId = null;
@@ -31,6 +58,7 @@ function showLobby() {
     document.getElementById('main-wrapper').style.display = 'none';
     document.querySelector('.nav').style.display = 'none';
     document.getElementById('bottom-console').style.display = 'none';
+    document.getElementById('trade-alert').style.display = 'none';
     fetchRooms();
     syncInterval = setInterval(fetchRooms, 2000);
 }
@@ -54,7 +82,7 @@ async function fetchRooms() {
     data.rooms.forEach(r => {
         let status = r.started ? `<span style="color:#4caf50;">Gra Trwa (${r.players_count} graczy)</span>` : `<span style="color:#ff9800;">Oczekuje na start...</span>`;
         list.innerHTML += `
-            <li style="background:#333; padding:15px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+            <li style="background:var(--card-bg); padding:15px; border-radius:5px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="font-size:1.2rem;">${r.name}</strong><br>
                     <small>${status}</small>
@@ -98,7 +126,7 @@ function generatePlayerInputs() {
     for(let i=0; i<count; i++) {
         container.innerHTML += `
             <div style="display:flex; gap:10px; align-items:center;">
-                <input type="text" id="p-name-${i}" value="${defaultNames[i]}" style="flex:2; padding:6px; background:#333; color:#fff; border:1px solid #555; border-radius:4px; min-width:80px;">
+                <input type="text" id="p-name-${i}" value="${defaultNames[i]}" style="flex:2; padding:6px; background:var(--bg-color); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; min-width:80px;">
                 <input type="color" id="p-color-${i}" value="${defaultColors[i]}" style="flex:1; height:32px; border:none; cursor:pointer; background:none;">
                 <label style="display:flex; align-items:center; gap:5px; font-size:0.9rem; flex:1;">
                     <input type="checkbox" id="p-ai-${i}" style="width:18px; height:18px;"> AI
@@ -178,6 +206,48 @@ async function renamePlayer(idx, oldName) {
     }
 }
 
+// USTAWIENIA MODAL
+function openSettings() {
+    document.getElementById('settings-modal').style.display = 'block';
+    const savedTheme = localStorage.getItem('monopoly_theme') || 'system';
+    document.getElementById('theme-select').value = savedTheme;
+    if(lastState && lastState.ai_delay !== undefined) {
+        document.getElementById('ai-speed-slider').value = lastState.ai_delay;
+        document.getElementById('ai-speed-val').innerText = lastState.ai_delay + 's';
+    }
+}
+function closeSettings() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+function changeTheme() {
+    const theme = document.getElementById('theme-select').value;
+    localStorage.setItem('monopoly_theme', theme);
+    applyTheme(theme);
+}
+function updateSpeedVal() {
+    document.getElementById('ai-speed-val').innerText = document.getElementById('ai-speed-slider').value + 's';
+}
+async function saveSpeed() {
+    const speed = document.getElementById('ai-speed-slider').value;
+    if(!currentRoomId) return;
+    await fetch(`/api/${currentRoomId}/settings`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ai_delay: speed})
+    });
+}
+async function endGame() {
+    if(!confirm("Zakonczyc gre i trwale usunac pokoj?")) return;
+    if(!currentRoomId) return;
+    await fetch(`/api/${currentRoomId}/settings`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({end_game: true})
+    });
+    closeSettings();
+    showLobby();
+}
+
 function renderBoard(data) {
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '<div class="tile empty-center"><div class="logo-text">MONOPOLY</div></div>';
@@ -190,7 +260,6 @@ function renderBoard(data) {
         div.className = 'tile' + (tile.is_mortgaged ? ' mortgaged' : '');
         div.onclick = () => showDeed(index);
         
-        // ZACHOWANIE 11x11 (Od 0 do 40 pół po obwodzie)
         let col=1, row=1;
         if (index <= 10) { col = 11 - index; row = 11; }
         else if (index <= 20) { col = 1; row = 11 - (index - 10); }
@@ -301,7 +370,7 @@ function renderInventory(forceRedraw = false) {
                 if (tile.houses === 0) {
                     html += `<button class="action-btn" style="background:#f44336; padding:6px; font-size:0.85rem;" onclick="sendAction('MORTGAGE', ${tile.id})">Zastaw (+$${tile.mortgage})</button>`;
                 } else {
-                    html += `<p style="font-size:0.7rem; color:#666; margin:0;">Najpierw sprzedaj domy by zastawic.</p>`;
+                    html += `<p style="font-size:0.7rem; color:var(--text-color); margin:0;">Najpierw sprzedaj domy by zastawic.</p>`;
                 }
                 html += `</div>`;
             }
@@ -318,7 +387,7 @@ function renderHistory(logs) {
     logs.forEach(log => {
         const li = document.createElement('li');
         li.style.padding = '8px 12px';
-        li.style.borderBottom = '1px solid #333';
+        li.style.borderBottom = '1px solid var(--border-color)';
         li.style.fontSize = '0.9rem';
         li.innerText = log;
         list.appendChild(li);
@@ -349,27 +418,46 @@ function updateTradeCheckboxes() {
     offerContainer.innerHTML = '';
     lastState.board.filter(t => t.owner === proposerName).forEach(t => {
         const chk = checkedOffers.includes(t.id.toString()) ? 'checked' : '';
-        offerContainer.innerHTML += `<label style="font-size:0.85rem; display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="offer-tile-chk" value="${t.id}" ${chk}> ${t.name}</label>`;
+        offerContainer.innerHTML += `
+            <div style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="offer_${t.id}" class="offer-tile-chk" value="${t.id}" ${chk}>
+                <label for="offer_${t.id}" style="font-size:0.85rem; cursor:pointer;">${t.name}</label>
+            </div>
+        `;
     });
     
     reqContainer.innerHTML = '';
     if(targetName) {
         lastState.board.filter(t => t.owner === targetName).forEach(t => {
             const chk = checkedReqs.includes(t.id.toString()) ? 'checked' : '';
-            reqContainer.innerHTML += `<label style="font-size:0.85rem; display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" class="request-tile-chk" value="${t.id}" ${chk}> ${t.name}</label>`;
+            reqContainer.innerHTML += `
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="req_${t.id}" class="request-tile-chk" value="${t.id}" ${chk}>
+                    <label for="req_${t.id}" style="font-size:0.85rem; cursor:pointer;">${t.name}</label>
+                </div>
+            `;
         });
     }
 }
 
 function handleTradeAlert(data) {
     const alertBox = document.getElementById('trade-alert');
-    const me = data.players.find(p => p.name === myPlayerName);
-    const isHumanUser = me && me.is_human;
-
-    if (data.active_trade && data.active_trade.to === myPlayerName && isHumanUser) {
+    if (data.active_trade) {
         let offTiles = data.active_trade.offer_tile_ids.map(id => data.board[id].name).join(', ') || 'brak';
         let reqTiles = data.active_trade.request_tile_ids.map(id => data.board[id].name).join(', ') || 'brak';
-        document.getElementById('trade-alert-text').innerHTML = `Od <strong>${data.active_trade['from']}</strong>:<br><br><span style="color:#4caf50;">Dostaniesz:</span> <strong>${offTiles} + $${data.active_trade.offer_money}</strong><br><span style="color:#f44336;">Oddasz:</span> <strong>${reqTiles} + $${data.active_trade.request_money}</strong>`;
+        
+        document.getElementById('trade-alert-text').innerHTML = `Od <strong>${data.active_trade['from']}</strong>:<br><br><span style="color:#4caf50;">Otrzymuje:</span> <strong>${offTiles} +$${data.active_trade.offer_money}</strong><br><span style="color:#f44336;">Oddaje:</span> <strong>${reqTiles} +$${data.active_trade.request_money}</strong>`;
+        
+        const me = data.players.find(p => p.name === myPlayerName);
+        const isMe = (data.active_trade.to === myPlayerName && me && me.is_human);
+        
+        let buttonsHtml = '';
+        if (isMe) {
+            buttonsHtml = `<button onclick="respondTrade(true)" class="action-btn" style="background:#4caf50;">Zgoda</button><button onclick="respondTrade(false)" class="action-btn" style="background:#f44336;">Odrzuc</button>`;
+        } else {
+            buttonsHtml = `<p style="color:var(--text-color); font-weight:bold; font-size:0.9rem;">Oczekiwanie na decyzje...</p>`;
+        }
+        document.getElementById('trade-alert-buttons').innerHTML = buttonsHtml;
         alertBox.style.display = 'block';
     } else {
         alertBox.style.display = 'none';
@@ -387,8 +475,25 @@ function handleTurnPanel(data) {
         if (data.enforce_permissions) {
             isMyTurn = (data.current_player === myPlayerName && isCurrentPlayerHuman);
         } else {
-            isMyTurn = isCurrentPlayerHuman; // W trybie luźnym każdy żywy gracz może klikać za dowolnego człowieka
+            isMyTurn = isCurrentPlayerHuman; // W trybie luźnym (Honor System) każdy gracz widzi przyciski za każdego człowieka
         }
+    }
+    
+    // Zawsze pokazuj karte i kosci, niezaleznie kogo tura (również dla AI)
+    const cardDisplay = document.getElementById('turn-card-display');
+    if(data.turn_card) {
+        cardDisplay.innerText = "Karta: " + data.turn_card;
+        cardDisplay.style.display = 'block';
+    } else { 
+        cardDisplay.style.display = 'none'; 
+    }
+
+    const diceDisplay = document.getElementById('turn-dice-display');
+    if(data.turn_dice) {
+        diceDisplay.innerHTML = `🎲 ${data.turn_dice[0]} + ${data.turn_dice[1]} = <strong>${data.turn_dice[0]+data.turn_dice[1]}</strong>`;
+        diceDisplay.style.display = 'block';
+    } else { 
+        diceDisplay.style.display = 'none'; 
     }
     
     if (isMyTurn && data.waiting_for_human) {
@@ -397,18 +502,6 @@ function handleTurnPanel(data) {
         if (data.human_action === 'BUY') panel.style.borderTopColor = '#4caf50';
         else if (data.human_action === 'ROLL') panel.style.borderTopColor = '#2196f3';
         else panel.style.borderTopColor = '#f44336';
-        
-        const diceDisplay = document.getElementById('turn-dice-display');
-        if(data.turn_dice) {
-            diceDisplay.innerHTML = `[Kosci] ${data.turn_dice[0]} + ${data.turn_dice[1]} = <strong>${data.turn_dice[0]+data.turn_dice[1]}</strong>`;
-            diceDisplay.style.display = 'block';
-        } else { diceDisplay.style.display = 'none'; }
-        
-        const cardDisplay = document.getElementById('turn-card-display');
-        if(data.turn_card) {
-            cardDisplay.innerText = "Karta: " + data.turn_card;
-            cardDisplay.style.display = 'block';
-        } else { cardDisplay.style.display = 'none'; }
         
         document.getElementById('turn-message-display').innerText = data.turn_message;
         
@@ -432,8 +525,6 @@ function handleTurnPanel(data) {
         panel.style.borderTopColor = '#555';
         document.getElementById('turn-actions').style.display = 'none';
         document.getElementById('turn-message-display').innerText = data.waiting_for_human ? "Oczekuje na ruch..." : data.turn_message;
-        document.getElementById('turn-dice-display').style.display = 'none';
-        document.getElementById('turn-card-display').style.display = 'none';
         panel.style.display = 'flex';
     }
 }
@@ -476,7 +567,7 @@ async function fetchState() {
     
     const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
     document.getElementById('btn-restart').style.display = (isHost || !data.enforce_permissions) ? 'block' : 'none';
-    document.getElementById('turn-count').innerText = `${data.turns} / ${data.max_turns}`;
+    document.getElementById('turn-count').innerText = `${data.turns} /${data.max_turns}`;
     if (!data.winner) document.getElementById('latest-log').innerText = data.latest_log;
     else document.getElementById('latest-log').innerHTML = `WYGRYWA: ${data.winner}`;
     
@@ -493,8 +584,8 @@ async function fetchState() {
         const li = document.createElement('li');
         li.className = `player-card ${p.is_bankrupt ? 'bankrupt' : ''}`;
         li.style.borderColor = p.color || "#888";
-        let editIcon = (p.is_human && (isHost || !data.enforce_permissions)) ? `<span style="cursor:pointer;" title="Zmien nazwe" onclick="renamePlayer(${idx}, '${p.name}')">[Edytuj]</span>` : '';
-        let aiIcon = p.is_human ? "[G]" : "[AI]";
+        let editIcon = (p.is_human && (isHost || !data.enforce_permissions)) ? `<span style="cursor:pointer;" title="Zmien nazwe" onclick="renamePlayer(${idx}, '${p.name}')">✏️</span>` : '';
+        let aiIcon = p.is_human ? "👤" : "🤖";
         li.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><strong style="font-size:1.1rem;">${aiIcon}${p.name} ${editIcon}</strong></div>Gotowka:$${p.money}<br>Posiadlosci:${p.properties}`;
         sb.appendChild(li);
     });
@@ -503,16 +594,15 @@ async function fetchState() {
 async function sendAction(action, tile_id=null) {
     if(!currentRoomId) return;
     
+    if (myPlayerName === 'Widz') { 
+        showToast("Jestes widzem i nie mozesz sterowac gra!"); 
+        return; 
+    }
+    
     const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL'];
-    if (turnActions.includes(action)) {
-        if (myPlayerName === 'Widz') { 
-            showToast("Jestes widzem i nie mozesz sterowac gra!"); 
-            return; 
-        }
-        if (lastState.enforce_permissions && lastState.current_player !== myPlayerName) { 
-            showToast("To nie Twoja tura!"); 
-            return; 
-        }
+    if (turnActions.includes(action) && lastState.enforce_permissions && lastState.current_player !== myPlayerName) { 
+        showToast("To nie Twoja tura!"); 
+        return; 
     }
 
     const res = await fetch(`/api/${currentRoomId}/action`, {

@@ -10,7 +10,7 @@ from monopoly import MonopolyGame
 log = logging.getLogger('werkzeug')
 app = Flask(__name__)
 
-ENFORCE_PERMISSIONS = True
+ENFORCE_PERMISSIONS = False
 rooms = {}
 
 try:
@@ -39,6 +39,8 @@ def run_game_loop():
         try:
             for room_id, room_data in list(rooms.items()):
                 game = room_data.get('game')
+                ai_delay = float(room_data.get('ai_delay', 1.5))
+                
                 if game and room_data.get('started'):
                     
                     active = [p for p in game.players if not p.is_bankrupt]
@@ -47,46 +49,48 @@ def run_game_loop():
                         
                     current_p = game.players[game.current_player_index]
                     
-                    # 1. Obsluga aktywnego tradingu (jesli adresatem jest AI)
+                    # Logika handlu dzialajaca niezaleznie od tury (gdy oferte dostaje bot)
                     if game.active_trade:
-                        trade = game.active_trade
-                        if trade['to'] == current_p.name and not current_p.is_human:
-                            p_from = next((p for p in game.players if p.name == trade['from']), None)
+                        target_name = game.active_trade['to']
+                        target_p = next((p for p in game.players if p.name == target_name), None)
+                        
+                        if target_p and not target_p.is_human:
+                            time.sleep(ai_delay) # Pauza by ludzie zdazyli przeczytac popup
+                            p_from = next((p for p in game.players if p.name == game.active_trade['from']), None)
                             if p_from:
-                                off_tiles = [t for t in game.board if t['id'] in trade['offer_tile_ids']]
-                                req_tiles = [t for t in game.board if t['id'] in trade['request_tile_ids']]
-                                val_gained = calc_trade_val(off_tiles, trade['offer_money'], current_p, p_from, game)
-                                val_lost = calc_trade_val(req_tiles, trade['request_money'], p_from, current_p, game)
+                                off_tiles = [t for t in game.board if t['id'] in game.active_trade['offer_tile_ids']]
+                                req_tiles = [t for t in game.board if t['id'] in game.active_trade['request_tile_ids']]
+                                val_gained = calc_trade_val(off_tiles, game.active_trade['offer_money'], target_p, p_from, game)
+                                val_lost = calc_trade_val(req_tiles, game.active_trade['request_money'], p_from, target_p, game)
                                 
                                 veto = False
                                 for t in req_tiles:
                                     g = t.get('group')
-                                    if g and game.has_monopoly(current_p, g): veto = True
+                                    if g and game.has_monopoly(target_p, g): veto = True
                                     if g:
                                         owned_by_them = sum(1 for pt in p_from.properties if pt.get('group') == g)
                                         total_in_g = sum(1 for pt in game.board if pt.get('group') == g)
                                         if owned_by_them == total_in_g - 1 and val_gained < (t.get('price', 0) * 3):
                                             veto = True
                                             
-                                if current_p.money < trade['request_money']: veto = True
+                                if target_p.money < game.active_trade['request_money']: veto = True
                                     
                                 if not veto and val_gained >= val_lost * 1.05:
-                                    if p_from.money >= trade['offer_money'] and current_p.money >= trade['request_money']:
-                                        p_from.money = p_from.money - trade['offer_money'] + trade['request_money']
-                                        current_p.money = current_p.money + trade['offer_money'] - trade['request_money']
+                                    if p_from.money >= game.active_trade['offer_money'] and target_p.money >= game.active_trade['request_money']:
+                                        p_from.money = p_from.money - game.active_trade['offer_money'] + game.active_trade['request_money']
+                                        target_p.money = target_p.money + game.active_trade['offer_money'] - game.active_trade['request_money']
                                         for ot in off_tiles:
                                             p_from.properties.remove(ot)
-                                            ot['owner'] = current_p
-                                            current_p.properties.append(ot)
+                                            ot['owner'] = target_p
+                                            target_p.properties.append(ot)
                                         for rt in req_tiles:
-                                            current_p.properties.remove(rt)
+                                            target_p.properties.remove(rt)
                                             rt['owner'] = p_from
                                             p_from.properties.append(rt)
-                                        game.add_history(f"[AI] {current_p.name} ZAAKCEPTOWAL wymiane od {p_from.name}.")
+                                        game.add_history(f"Bot {target_p.name} ZAAKCEPTOWAL wymiane od {p_from.name}.")
                                 else:
-                                    game.add_history(f"[AI] {current_p.name} ODRZUCIL wymiane od {p_from.name}.")
+                                    game.add_history(f"Bot {target_p.name} ODRZUCIL wymiane od {p_from.name}.")
                             game.active_trade = None
-                            time.sleep(1.5)
                         continue
                         
                     if current_p.is_bankrupt:
@@ -109,7 +113,7 @@ def run_game_loop():
                                             current_p.pay(t['house_cost'], game.board)
                                             t['houses'] += 1
                                             symbol = "dom" if t['houses'] < 5 else "hotel"
-                                            game.latest_log = f"[AI] {current_p.name} stawia {symbol} na {t['name']}."
+                                            game.latest_log = f"Bot {current_p.name} stawia {symbol} na {t['name']}."
                                             game.add_history(game.latest_log)
                                             break 
 
@@ -123,7 +127,7 @@ def run_game_loop():
                                         to_m = standalone[0]
                                         to_m['is_mortgaged'] = True
                                         current_p.receive(to_m['mortgage'])
-                                        game.add_history(f"[AI] {current_p.name} zastawia {to_m['name']}.")
+                                        game.add_history(f"Bot {current_p.name} zastawia {to_m['name']}.")
                         
                         if req == 'ROLL' and random.random() < 0.2:
                             for group in ['saddlebrown', 'lightblue', 'mediumvioletred', 'darkorange', 'red', 'gold', 'green', 'blue']:
@@ -150,7 +154,7 @@ def run_game_loop():
                                                 "offer_money": offer_cash,
                                                 "request_money": 0
                                             }
-                                            game.add_history(f"[AI] {current_p.name} zaproponowal wymiane do {target.name}.")
+                                            game.add_history(f"Bot {current_p.name} zaproponowal wymiane do {target.name}.")
                                             break
 
                         if game.active_trade:
@@ -174,8 +178,11 @@ def run_game_loop():
                             state_key = ai_agent.get_state_key(game, current_p)
                             action = ai_agent.choose_action(state_key, valid_actions)
                         
-                        if not action and valid_actions:
-                            action = valid_actions[0]
+                        if not action:
+                            if valid_actions: action = valid_actions[0]
+                            else:
+                                game.next_player()
+                                continue
                             
                         if action == 'ROLL':
                             game.execute_roll_and_move(current_p)
@@ -193,7 +200,9 @@ def run_game_loop():
                         elif action in ['PASS', 'ACKNOWLEDGE']:
                             game.next_player()
                             
-                        time.sleep(1.5)
+                        if ai_delay > 0:
+                            time.sleep(ai_delay)
+                            
         except Exception as e:
             pass
         time.sleep(1.0)
@@ -226,7 +235,7 @@ def create_room():
     if not room_name: room_name = 'Pokoj bez nazwy'
     room_id = str(uuid.uuid4())[:8]
     dummy_game = MonopolyGame([{"name":"Host", "color":"#fff"}])
-    rooms[room_id] = {"name": room_name, "game": dummy_game, "started": False}
+    rooms[room_id] = {"name": room_name, "game": dummy_game, "started": False, "ai_delay": 1.5}
     return jsonify({"status": "ok", "room_id": room_id})
 
 @app.route('/api/<room_id>/state')
@@ -238,7 +247,22 @@ def get_state(room_id):
     state['game_started'] = room_data['started']
     state['enforce_permissions'] = ENFORCE_PERMISSIONS
     state['room_name'] = room_data['name']
+    state['ai_delay'] = room_data.get('ai_delay', 1.5)
     return jsonify(state)
+
+@app.route('/api/<room_id>/settings', methods=['POST'])
+def update_settings(room_id):
+    if room_id not in rooms: return jsonify({"error": "Pokoj nie istnieje"}), 404
+    data = request.json
+    
+    if data.get('end_game'):
+        del rooms[room_id]
+        return jsonify({"status": "ended"})
+        
+    if 'ai_delay' in data:
+        rooms[room_id]['ai_delay'] = float(data['ai_delay'])
+        
+    return jsonify({"status": "ok"})
 
 @app.route('/api/<room_id>/setup', methods=['POST'])
 def setup_game(room_id):
@@ -337,7 +361,7 @@ def action(room_id):
                 tile['is_mortgaged'] = False
                 game.latest_log = f"{tile['owner'].name} wykupuje {tile['name']}."
                 game.add_history(game.latest_log)
-            else: return jsonify({"error": "Brak srodkow na wykup (+10%)!"}), 400
+            else: return jsonify({"error": "Brak srodkow na wykup!"}), 400
         return jsonify({"status": "ok"})
         
     if action_type == 'BUILD':
@@ -394,7 +418,7 @@ def action(room_id):
                     
             if p_from.money < t['offer_money'] or p_to.money < t['request_money']:
                 game.active_trade = None
-                return jsonify({"error": "Niewystarczajace srodki gotowkowe."}), 400
+                return jsonify({"error": "Niewystarczajace srodki."}), 400
                 
             p_from.money -= t['offer_money']
             p_to.money += t['offer_money']
