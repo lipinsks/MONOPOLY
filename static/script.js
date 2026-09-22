@@ -2,6 +2,8 @@ let myPlayerName = localStorage.getItem('monopoly_username') || "Widz";
 let currentRoomId = null;
 let syncInterval = null;
 
+const diceChars = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']; 
+
 // INIT MOTYWU
 function initTheme() {
     let savedTheme = localStorage.getItem('monopoly_theme') || 'system';
@@ -33,20 +35,12 @@ function switchTab(tabId) {
     event.target.classList.add('active');
 }
 
-function showToast(msg) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerText = msg;
-    container.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3500);
-}
-
 let playerColors = {};
 let lastState = null;
 
 function init() { 
     initTheme();
+    generatePlayerInputs(); // Od razu wstawiamy pola dla graczy
     showLobby(); 
 }
 
@@ -110,7 +104,7 @@ async function createRoom() {
 function joinRoom(id) {
     currentRoomId = id;
     if(syncInterval) clearInterval(syncInterval);
-    hideLobby();
+    document.getElementById('lobby-screen').style.display = 'none';
     fetchState();
     syncInterval = setInterval(fetchState, 500);
 }
@@ -118,8 +112,9 @@ function joinRoom(id) {
 function leaveRoom() { showLobby(); }
 
 function generatePlayerInputs() {
-    const count = parseInt(document.getElementById('setup-count').value);
+    const count = parseInt(document.getElementById('setup-count').value) || 2;
     const container = document.getElementById('setup-players-container');
+    if (!container) return;
     container.innerHTML = '';
     const defaultNames = ["Gracz 1", "Gracz 2", "Gracz 3", "Gracz 4", "Gracz 5", "Gracz 6"];
     const defaultColors = ["#ff5252", "#00bcd4", "#4caf50", "#ffeb3b", "#9c27b0", "#ff9800"];
@@ -128,7 +123,7 @@ function generatePlayerInputs() {
             <div style="display:flex; gap:10px; align-items:center;">
                 <input type="text" id="p-name-${i}" value="${defaultNames[i]}" style="flex:2; padding:6px; background:var(--bg-color); color:var(--text-color); border:1px solid var(--border-color); border-radius:4px; min-width:80px;">
                 <input type="color" id="p-color-${i}" value="${defaultColors[i]}" style="flex:1; height:32px; border:none; cursor:pointer; background:none;">
-                <label style="display:flex; align-items:center; gap:5px; font-size:0.9rem; flex:1;">
+                <label for="p-ai-${i}" style="display:flex; align-items:center; gap:5px; font-size:0.9rem; flex:1; cursor:pointer;">
                     <input type="checkbox" id="p-ai-${i}" style="width:18px; height:18px;"> AI
                 </label>
             </div>
@@ -138,6 +133,7 @@ function generatePlayerInputs() {
 
 async function submitSetup() {
     const count = parseInt(document.getElementById('setup-count').value);
+    
     let players = [];
     for(let i=0; i<count; i++) {
         players.push({
@@ -171,18 +167,18 @@ function changeRole() {
 async function restartGame() {
     const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
     if(lastState && lastState.enforce_permissions && !isHost) {
-        showToast("Tylko Host moze restartowac gre!");
+        alert("Tylko Host moze restartowac gre!");
         return;
     }
     if(!confirm("Czy na pewno chcesz zrestartowac pokoj?")) return;
     const res = await fetch(`/api/${currentRoomId}/restart`, { method: 'POST' });
-    if(res.ok) { showToast("Zrestartowano gre!"); fetchState(); }
+    if(res.ok) { fetchState(); }
 }
 
 async function renamePlayer(idx, oldName) {
     const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
     if(lastState && lastState.enforce_permissions && !isHost) {
-        showToast("Tylko Host moze zmieniac nazwy!");
+        alert("Tylko Host moze zmieniac nazwy!");
         return;
     }
     const newName = prompt(`Zmien nazwe dla ${oldName}:`, oldName);
@@ -195,7 +191,7 @@ async function renamePlayer(idx, oldName) {
         });
         if (!res.ok) {
             const err = await res.json();
-            showToast(err.error);
+            alert(err.error);
         } else {
             if(myPlayerName === oldName) {
                 myPlayerName = cleanName;
@@ -208,25 +204,34 @@ async function renamePlayer(idx, oldName) {
 
 // USTAWIENIA MODAL
 function openSettings() {
+    if(!lastState) return;
     document.getElementById('settings-modal').style.display = 'block';
     const savedTheme = localStorage.getItem('monopoly_theme') || 'system';
     document.getElementById('theme-select').value = savedTheme;
-    if(lastState && lastState.ai_delay !== undefined) {
+    
+    if(lastState.ai_delay !== undefined) {
         document.getElementById('ai-speed-slider').value = lastState.ai_delay;
         document.getElementById('ai-speed-val').innerText = lastState.ai_delay + 's';
     }
+    if(lastState.max_turns !== undefined) {
+        document.getElementById('settings-max-turns').value = lastState.max_turns;
+    }
 }
+
 function closeSettings() {
     document.getElementById('settings-modal').style.display = 'none';
 }
+
 function changeTheme() {
     const theme = document.getElementById('theme-select').value;
     localStorage.setItem('monopoly_theme', theme);
     applyTheme(theme);
 }
+
 function updateSpeedVal() {
     document.getElementById('ai-speed-val').innerText = document.getElementById('ai-speed-slider').value + 's';
 }
+
 async function saveSpeed() {
     const speed = document.getElementById('ai-speed-slider').value;
     if(!currentRoomId) return;
@@ -236,6 +241,17 @@ async function saveSpeed() {
         body: JSON.stringify({ai_delay: speed})
     });
 }
+
+async function saveSettings() {
+    const maxT = document.getElementById('settings-max-turns').value;
+    if(!currentRoomId) return;
+    await fetch(`/api/${currentRoomId}/settings`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({max_turns: maxT})
+    });
+}
+
 async function endGame() {
     if(!confirm("Zakonczyc gre i trwale usunac pokoj?")) return;
     if(!currentRoomId) return;
@@ -324,10 +340,24 @@ function renderInventory(forceRedraw = false) {
     const grid = document.getElementById('inv-grid');
     grid.innerHTML = '';
     const playerTiles = lastState.board.filter(t => t.owner === selectedPlayer);
+    const pData = lastState.players.find(p => p.name === selectedPlayer);
     
-    if(playerTiles.length === 0) {
-        grid.innerHTML = '<p style="color:#aaa; text-align:center;">Brak nieruchomosci w portfelu.</p>';
+    if(playerTiles.length === 0 && (!pData || pData.get_out_of_jail_cards === 0)) {
+        grid.innerHTML = '<p style="color:#aaa; text-align:center;">Brak przedmiotow w portfelu.</p>';
         return;
+    }
+    
+    // Karta wyjscia z wiezienia w ekwipunku
+    if(pData && pData.get_out_of_jail_cards > 0) {
+        const card = document.createElement('div');
+        card.className = 'inv-card';
+        let html = `<div class="deed-header" style="background-color:#9c27b0; color:#fff; font-size:0.85rem; padding:8px 4px; margin:0; border-bottom:2px solid #000;">KARTA SZANSY</div>`;
+        html += `<div style="padding: 8px; text-align:center; display:flex; flex-direction:column; justify-content:center; flex-grow:1;">`;
+        html += `<p style="margin-top:0; font-weight:bold; margin-bottom:10px;">Wyjdz bezplatnie z wiezienia</p>`;
+        html += `<p style="margin-top:0; font-weight:bold; margin-bottom:10px; color:#2196f3;">Ilosc: ${pData.get_out_of_jail_cards}</p>`;
+        html += `</div>`;
+        card.innerHTML = html;
+        grid.appendChild(card);
     }
     
     playerTiles.forEach(tile => {
@@ -475,11 +505,10 @@ function handleTurnPanel(data) {
         if (data.enforce_permissions) {
             isMyTurn = (data.current_player === myPlayerName && isCurrentPlayerHuman);
         } else {
-            isMyTurn = isCurrentPlayerHuman; // W trybie luźnym (Honor System) każdy gracz widzi przyciski za każdego człowieka
+            isMyTurn = isCurrentPlayerHuman;
         }
     }
     
-    // Zawsze pokazuj karte i kosci, niezaleznie kogo tura (również dla AI)
     const cardDisplay = document.getElementById('turn-card-display');
     if(data.turn_card) {
         cardDisplay.innerText = "Karta: " + data.turn_card;
@@ -490,10 +519,32 @@ function handleTurnPanel(data) {
 
     const diceDisplay = document.getElementById('turn-dice-display');
     if(data.turn_dice) {
-        diceDisplay.innerHTML = `🎲 ${data.turn_dice[0]} + ${data.turn_dice[1]} = <strong>${data.turn_dice[0]+data.turn_dice[1]}</strong>`;
+        let d1 = diceChars[data.turn_dice[0]];
+        let d2 = diceChars[data.turn_dice[1]];
+        diceDisplay.innerHTML = `<span class="dice-icon">${d1}</span><span class="dice-icon">${d2}</span>`;
         diceDisplay.style.display = 'block';
     } else { 
         diceDisplay.style.display = 'none'; 
+    }
+    
+    document.getElementById('turn-info-display').innerText = `Tura ${data.turns} /${data.max_turns}`;
+    
+    if (data.active_trade) {
+        document.getElementById('console-title').innerText = "Wymiana";
+        document.getElementById('turn-actions').style.display = 'none';
+        
+        if (data.active_trade.to === myPlayerName) {
+            document.getElementById('turn-message-display').innerText = "Oczekujaca oferta. Podejmij decyzje w oknie wyzej.";
+            panel.style.borderTopColor = '#4caf50';
+        } else if (data.active_trade.from === myPlayerName) {
+            document.getElementById('turn-message-display').innerText = "Czekasz na odpowiedz gracza...";
+            panel.style.borderTopColor = '#ff9800';
+        } else {
+            document.getElementById('turn-message-display').innerText = "Trwaja negocjacje handlowe...";
+            panel.style.borderTopColor = '#ff9800';
+        }
+        panel.style.display = 'flex';
+        return; 
     }
     
     if (isMyTurn && data.waiting_for_human) {
@@ -509,10 +560,12 @@ function handleTurnPanel(data) {
             document.getElementById('modal-btn-roll').style.display = 'none';
             document.getElementById('modal-btn-jail-pay').style.display = 'block';
             document.getElementById('modal-btn-jail-roll').style.display = 'block';
+            document.getElementById('modal-btn-jail-card').style.display = (currP.get_out_of_jail_cards > 0) ? 'block' : 'none';
         } else {
             document.getElementById('modal-btn-roll').style.display = (data.human_action === 'ROLL') ? 'block' : 'none';
             document.getElementById('modal-btn-jail-pay').style.display = 'none';
             document.getElementById('modal-btn-jail-roll').style.display = 'none';
+            document.getElementById('modal-btn-jail-card').style.display = 'none';
         }
         document.getElementById('modal-btn-buy').style.display = (data.human_action === 'BUY') ? 'block' : 'none';
         document.getElementById('modal-btn-pass').style.display = (data.human_action === 'BUY') ? 'block' : 'none';
@@ -524,7 +577,9 @@ function handleTurnPanel(data) {
         document.getElementById('console-title').innerText = `Tura: ${data.current_player}`;
         panel.style.borderTopColor = '#555';
         document.getElementById('turn-actions').style.display = 'none';
-        document.getElementById('turn-message-display').innerText = data.waiting_for_human ? "Oczekuje na ruch..." : data.turn_message;
+        
+        let mainLog = data.winner ? `WYGRYWA: ${data.winner}` : data.latest_log;
+        document.getElementById('turn-message-display').innerText = data.waiting_for_human ? mainLog : data.turn_message;
         panel.style.display = 'flex';
     }
 }
@@ -534,12 +589,21 @@ async function fetchState() {
     const res = await fetch(`/api/${currentRoomId}/state`);
     if(!res.ok) { leaveRoom(); return; }
     const data = await res.json();
-    lastState = data;
+    if(data.game_started === false && !data.room_name) {
+        leaveRoom();
+        return;
+    }
     
+    lastState = data;
+    const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
     const roleSel = document.getElementById('role-select');
+    
     if (data.game_started) {
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('lobby-screen').style.display = 'none';
+        document.getElementById('main-wrapper').style.display = 'flex';
+        document.querySelector('.nav').style.display = 'flex';
+        
         let roleStr = "Widz|" + data.players.filter(p=>p.is_human).map(p=>p.name).join('|');
         let currRoleStr = Array.from(roleSel.options).map(o=>o.value).join('|');
         if(roleStr !== currRoleStr) {
@@ -553,7 +617,6 @@ async function fetchState() {
             else { roleSel.value = "Widz"; myPlayerName = "Widz"; }
         }
     } else {
-        const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
         document.getElementById('setup-screen').style.display = 'flex';
         document.getElementById('setup-room-name').innerText = data.room_name;
         if (!isHost) {
@@ -565,11 +628,9 @@ async function fetchState() {
         }
     }
     
-    const isHost = localStorage.getItem(`monopoly_host_${currentRoomId}`) === 'true';
+    if(!data.game_started) return;
+    
     document.getElementById('btn-restart').style.display = (isHost || !data.enforce_permissions) ? 'block' : 'none';
-    document.getElementById('turn-count').innerText = `${data.turns} /${data.max_turns}`;
-    if (!data.winner) document.getElementById('latest-log').innerText = data.latest_log;
-    else document.getElementById('latest-log').innerHTML = `WYGRYWA: ${data.winner}`;
     
     handleTurnPanel(data);
     handleTradeAlert(data);
@@ -584,8 +645,8 @@ async function fetchState() {
         const li = document.createElement('li');
         li.className = `player-card ${p.is_bankrupt ? 'bankrupt' : ''}`;
         li.style.borderColor = p.color || "#888";
-        let editIcon = (p.is_human && (isHost || !data.enforce_permissions)) ? `<span style="cursor:pointer;" title="Zmien nazwe" onclick="renamePlayer(${idx}, '${p.name}')">✏️</span>` : '';
-        let aiIcon = p.is_human ? "👤" : "🤖";
+        let editIcon = (p.is_human && (isHost || !data.enforce_permissions)) ? `<span style="cursor:pointer; margin-left:10px;" title="Zmien nazwe" onclick="renamePlayer(${idx}, '${p.name}')">✏️</span>` : '';
+        let aiIcon = p.is_human ? "" : "🤖 ";
         li.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><strong style="font-size:1.1rem;">${aiIcon}${p.name} ${editIcon}</strong></div>Gotowka:$${p.money}<br>Posiadlosci:${p.properties}`;
         sb.appendChild(li);
     });
@@ -595,13 +656,13 @@ async function sendAction(action, tile_id=null) {
     if(!currentRoomId) return;
     
     if (myPlayerName === 'Widz') { 
-        showToast("Jestes widzem i nie mozesz sterowac gra!"); 
+        alert("Jestes widzem i nie mozesz sterowac gra!"); 
         return; 
     }
     
-    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL'];
+    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL', 'JAIL_CARD'];
     if (turnActions.includes(action) && lastState.enforce_permissions && lastState.current_player !== myPlayerName) { 
-        showToast("To nie Twoja tura!"); 
+        alert("To nie Twoja tura!"); 
         return; 
     }
 
@@ -610,13 +671,13 @@ async function sendAction(action, tile_id=null) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({action: action, tile_id: tile_id})
     });
-    if (!res.ok) { const err = await res.json(); showToast(err.error); }
+    if (!res.ok) { const err = await res.json(); alert(err.error); }
     fetchState();
 }
 
 async function proposeMultiTrade() {
     if(!currentRoomId) return;
-    if(myPlayerName === 'Widz') { showToast("Widzowie nie handluja!"); return; }
+    if(myPlayerName === 'Widz') { alert("Widzowie nie moga proponowac wymian!"); return; }
     const target = document.getElementById('trade-target').value;
     let offerIds = [];
     document.querySelectorAll('.offer-tile-chk:checked').forEach(el => { offerIds.push(parseInt(el.value)); });
@@ -624,29 +685,31 @@ async function proposeMultiTrade() {
     document.querySelectorAll('.request-tile-chk:checked').forEach(el => { requestIds.push(parseInt(el.value)); });
     const offMoney = document.getElementById('trade-offer-money').value;
     const reqMoney = document.getElementById('trade-request-money').value;
+    const offCards = document.getElementById('trade-offer-cards').value;
+    const reqCards = document.getElementById('trade-request-cards').value;
     
     const res = await fetch(`/api/${currentRoomId}/action`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             action: 'PROPOSE_TRADE', from_player: myPlayerName, target_player: target,
-            offer_tile_ids: offerIds, request_tile_ids: requestIds, offer_money: offMoney, request_money: reqMoney
+            offer_tile_ids: offerIds, request_tile_ids: requestIds, offer_money: offMoney, request_money: reqMoney,
+            offer_cards: offCards, request_cards: reqCards
         })
     });
-    if(res.ok) { showToast("Wyslano oferte!"); switchTab('board-tab'); }
-    else { const err = await res.json(); showToast(err.error); }
+    if(res.ok) { switchTab('board-tab'); }
+    else { const err = await res.json(); alert(err.error); }
 }
 
 async function respondTrade(accept) {
     if(!currentRoomId) return;
-    if(myPlayerName === 'Widz') { showToast("Widzowie nie klikaja wymian!"); return; }
+    if(myPlayerName === 'Widz') { alert("Widzowie nie moga odpowiadac na wymiany!"); return; }
     const res = await fetch(`/api/${currentRoomId}/action`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({action: 'RESPOND_TRADE', accept: accept})
     });
-    if(res.ok) { showToast(accept ? "Zaakceptowano!" : "Odrzucono."); document.getElementById('trade-alert').style.display = 'none'; }
-    else { const err = await res.json(); showToast(err.error); }
+    if(!res.ok) { const err = await res.json(); alert(err.error); }
     fetchState();
 }
 

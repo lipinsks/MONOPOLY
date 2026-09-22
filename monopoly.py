@@ -12,6 +12,7 @@ class Player:
         self.jail_turns = 0
         self.is_bankrupt = False
         self.doubles_count = 0
+        self.get_out_of_jail_cards = 0
 
     def pay(self, amount, board):
         self.money -= amount
@@ -52,8 +53,8 @@ class MonopolyGame:
         random.shuffle(self.chest_cards)
         self.max_turns = max_turns
         self.turns = 0
-        self.latest_log = "Gra rozpoczęta!"
-        self.history_logs = ["Gra została zainicjowana."]
+        self.latest_log = "Gra rozpoczeta!"
+        self.history_logs = ["Gra zostala zainicjowana."]
         
         self.waiting_for_human = True
         self.human_action_required = 'ROLL'
@@ -74,7 +75,7 @@ class MonopolyGame:
         return [
             {"id": 0, "name": "START", "type": "start"},
             {"id": 1, "name": "Mediter. Avenue", "type": "property", "group": "saddlebrown", "price": 60, "house_cost": 50, "rents": [2, 10, 30, 90, 160, 250], "mortgage": 30, "houses": 0, "is_mortgaged": False},
-            {"id": 2, "name": "Kasa Społeczna", "type": "chest"},
+            {"id": 2, "name": "Kasa Spoleczna", "type": "chest"},
             {"id": 3, "name": "Baltic Avenue", "type": "property", "group": "saddlebrown", "price": 60, "house_cost": 50, "rents": [4, 20, 60, 180, 320, 450], "mortgage": 30, "houses": 0, "is_mortgaged": False},
             {"id": 4, "name": "Podatek dochodowy", "type": "tax", "amount": 200},
             {"id": 5, "name": "Kolej Reading", "type": "railroad", "group": "railroad", "price": 200, "rents": [25, 50, 100, 200], "mortgage": 100, "is_mortgaged": False},
@@ -82,17 +83,17 @@ class MonopolyGame:
             {"id": 7, "name": "Szansa", "type": "chance"},
             {"id": 8, "name": "Vermont Avenue", "type": "property", "group": "lightblue", "price": 100, "house_cost": 50, "rents": [6, 30, 90, 270, 400, 550], "mortgage": 50, "houses": 0, "is_mortgaged": False},
             {"id": 9, "name": "Connecticut Avenue", "type": "property", "group": "lightblue", "price": 120, "house_cost": 50, "rents": [8, 40, 100, 300, 450, 600], "mortgage": 60, "houses": 0, "is_mortgaged": False},
-            {"id": 10, "name": "Więzienie", "type": "jail"},
+            {"id": 10, "name": "Wiezienie", "type": "jail"},
             {"id": 11, "name": "St. Charles Place", "type": "property", "group": "mediumvioletred", "price": 140, "house_cost": 100, "rents": [10, 50, 150, 450, 625, 750], "mortgage": 70, "houses": 0, "is_mortgaged": False},
-            {"id": 12, "name": "Elektrociepłownia", "type": "utility", "group": "utility", "price": 150, "mortgage": 75, "is_mortgaged": False},
+            {"id": 12, "name": "Elektrocieplownia", "type": "utility", "group": "utility", "price": 150, "mortgage": 75, "is_mortgaged": False},
             {"id": 13, "name": "States Avenue", "type": "property", "group": "mediumvioletred", "price": 140, "house_cost": 100, "rents": [10, 50, 150, 450, 625, 750], "mortgage": 70, "houses": 0, "is_mortgaged": False},
             {"id": 14, "name": "Virginia Avenue", "type": "property", "group": "mediumvioletred", "price": 160, "house_cost": 100, "rents": [12, 60, 180, 500, 700, 900], "mortgage": 80, "houses": 0, "is_mortgaged": False},
             {"id": 15, "name": "Kolej Pennsylvania", "type": "railroad", "group": "railroad", "price": 200, "rents": [25, 50, 100, 200], "mortgage": 100, "is_mortgaged": False},
             {"id": 16, "name": "St. James Place", "type": "property", "group": "darkorange", "price": 180, "house_cost": 100, "rents": [14, 70, 200, 550, 750, 950], "mortgage": 90, "houses": 0, "is_mortgaged": False},
-            {"id": 17, "name": "Kasa Społeczna", "type": "chest"},
+            {"id": 17, "name": "Kasa Spoleczna", "type": "chest"},
             {"id": 18, "name": "Tennessee Avenue", "type": "property", "group": "darkorange", "price": 180, "house_cost": 100, "rents": [14, 70, 200, 550, 750, 950], "mortgage": 90, "houses": 0, "is_mortgaged": False},
             {"id": 19, "name": "New York Avenue", "type": "property", "group": "darkorange", "price": 200, "house_cost": 100, "rents": [16, 80, 220, 600, 800, 1000], "mortgage": 100, "houses": 0, "is_mortgaged": False},
-            {"id": 20, "name": "Bezpłatny Parking", "type": "free_parking"},
+            {"id": 20, "name": "Bezplatny Parking", "type": "free_parking"},
             {"id": 21, "name": "Kentucky Avenue", "type": "property", "group": "red", "price": 220, "house_cost": 150, "rents": [18, 90, 250, 700, 875, 1050], "mortgage": 110, "houses": 0, "is_mortgaged": False},
             {"id": 22, "name": "Szansa", "type": "chance"},
             {"id": 23, "name": "Indiana Avenue", "type": "property", "group": "red", "price": 220, "house_cost": 150, "rents": [18, 90, 250, 700, 875, 1050], "mortgage": 110, "houses": 0, "is_mortgaged": False},
@@ -100,12 +101,12 @@ class MonopolyGame:
             {"id": 25, "name": "Kolej B.& O.", "type": "railroad", "group": "railroad", "price": 200, "rents": [25, 50, 100, 200], "mortgage": 100, "is_mortgaged": False},
             {"id": 26, "name": "Atlantic Avenue", "type": "property", "group": "gold", "price": 260, "house_cost": 150, "rents": [22, 110, 330, 800, 975, 1150], "mortgage": 130, "houses": 0, "is_mortgaged": False},
             {"id": 27, "name": "Ventnor Avenue", "type": "property", "group": "gold", "price": 260, "house_cost": 150, "rents": [22, 110, 330, 800, 975, 1150], "mortgage": 130, "houses": 0, "is_mortgaged": False},
-            {"id": 28, "name": "Wodociągi", "type": "utility", "group": "utility", "price": 150, "mortgage": 75, "is_mortgaged": False},
+            {"id": 28, "name": "Wodociagi", "type": "utility", "group": "utility", "price": 150, "mortgage": 75, "is_mortgaged": False},
             {"id": 29, "name": "Marvin Gardens", "type": "property", "group": "gold", "price": 280, "house_cost": 150, "rents": [24, 120, 360, 850, 1025, 1200], "mortgage": 140, "houses": 0, "is_mortgaged": False},
-            {"id": 30, "name": "Idź do Więzienia", "type": "go_to_jail"},
+            {"id": 30, "name": "Idz do Wiezienia", "type": "go_to_jail"},
             {"id": 31, "name": "Pacific Avenue", "type": "property", "group": "green", "price": 300, "house_cost": 200, "rents": [26, 130, 390, 900, 1100, 1275], "mortgage": 150, "houses": 0, "is_mortgaged": False},
             {"id": 32, "name": "North Carolina Avenue", "type": "property", "group": "green", "price": 300, "house_cost": 200, "rents": [26, 130, 390, 900, 1100, 1275], "mortgage": 150, "houses": 0, "is_mortgaged": False},
-            {"id": 33, "name": "Kasa Społeczna", "type": "chest"},
+            {"id": 33, "name": "Kasa Spoleczna", "type": "chest"},
             {"id": 34, "name": "Pennsylvania Avenue", "type": "property", "group": "green", "price": 320, "house_cost": 200, "rents": [28, 150, 450, 1000, 1200, 1400], "mortgage": 160, "houses": 0, "is_mortgaged": False},
             {"id": 35, "name": "Kolej Short Line", "type": "railroad", "group": "railroad", "price": 200, "rents": [25, 50, 100, 200], "mortgage": 100, "is_mortgaged": False},
             {"id": 36, "name": "Szansa", "type": "chance"},
@@ -116,16 +117,17 @@ class MonopolyGame:
 
     def init_cards(self):
         return [
-            ("Przejdź na START (Odbierz $200)", lambda p: setattr(p, 'position', 0)),
-            ("Mandat za prędkość. Zapłać $50", lambda p: p.pay(50, self.board)),
+            ("Przejdz na START (Odbierz $200)", lambda p: setattr(p, 'position', 0)),
+            ("Mandat za predkosc. Zaplac $50", lambda p: p.pay(50, self.board)),
             ("Zwrot z banku. Odbierz $200", lambda p: p.receive(200)),
-            ("Idź do więzienia", lambda p: self.send_to_jail(p)),
+            ("Idz do wiezienia", lambda p: self.send_to_jail(p)),
             ("Zwrot podatku. Odbierz $20", lambda p: p.receive(20)),
-            ("Płacisz za remont domu: $40 za każdy dom, $115 za hotel", lambda p: self.pay_repairs(p, 40, 115)),
-            ("Wygrana w konkursie piękności! Odbierz $100", lambda p: p.receive(100)),
-            ("Masz urodziny! Każdy z graczy daje Ci $10", lambda p: self.birthday(p, 10)),
-            ("Opłacenie czesnego. Zapłać $50", lambda p: p.pay(50, self.board)),
-            ("Sprzedaż akcji. Odbierz $50", lambda p: p.receive(50))
+            ("Placisz za remont domu: $40 za kazdy dom, $115 za hotel", lambda p: self.pay_repairs(p, 40, 115)),
+            ("Wygrana w konkursie pieknosci! Odbierz $100", lambda p: p.receive(100)),
+            ("Masz urodziny! Kazdy z graczy daje Ci $10", lambda p: self.birthday(p, 10)),
+            ("Oplacenie czesnego. Zaplac $50", lambda p: p.pay(50, self.board)),
+            ("Sprzedaz akcji. Odbierz $50", lambda p: p.receive(50)),
+            ("WYJDZ BEZPLATNIE Z WIEZIENIA", lambda p: setattr(p, 'get_out_of_jail_cards', p.get_out_of_jail_cards + 1))
         ]
 
     def pay_repairs(self, player, house_fee, hotel_fee):
@@ -183,9 +185,9 @@ class MonopolyGame:
             self.human_action_required = 'ROLL'
             self.turn_dice = None
             if self.extra_turn:
-                self.turn_message = f"Tura gracza {player.name}. Masz dodatkowy rzut za dublet!"
+                self.turn_message = f"Masz dodatkowy rzut za dublet!"
             else:
-                self.turn_message = f"Tura gracza {player.name}."
+                self.turn_message = f"Poczatek tury."
             self.turn_card = ""
             return
 
@@ -203,27 +205,36 @@ class MonopolyGame:
             player.doubles_count = 0
             if d1 == d2:
                 player.in_jail = False
-                self.turn_message = "Dublet! Wychodzisz z więzienia."
+                self.turn_message = "Dublet! Wychodzisz z wiezienia."
                 self.extra_turn = False
             else:
                 player.jail_turns += 1
                 if player.jail_turns >= 3:
+                    player.pay(50, self.board)
                     player.in_jail = False
-                    self.turn_message = "Trzecia tura w więzieniu. Wychodzisz."
+                    if player.is_bankrupt:
+                        self.turn_message = "Bankructwo przez splate $50 z wiezienia."
+                        self.human_action_required = 'ACKNOWLEDGE'
+                        return
+                    self.turn_message = "Koniec prob. Placisz $50 i wychodzisz."
                     self.extra_turn = False
                 else:
-                    self.turn_message = "Brak dubletu. Zostajesz w więzieniu."
+                    self.turn_message = f"Brak dubletu. Zostajesz (Proba {player.jail_turns}/3)."
                     self.human_action_required = 'ACKNOWLEDGE'
                     self.extra_turn = False
+                    self.latest_log = f"{player.name} nie wyrzuca dubletu. Zostaje w wiezieniu."
+                    self.add_history(self.latest_log)
                     return
         else:
             if d1 == d2:
                 player.doubles_count += 1
                 if player.doubles_count == 3:
-                    self.turn_message = "Trzy dublety z rzędu! Idziesz do więzienia za oszustwo."
+                    self.turn_message = "Trzy dublety z rzedu! Idziesz do wiezienia za oszustwo."
                     self.send_to_jail(player)
                     self.extra_turn = False
                     self.human_action_required = 'ACKNOWLEDGE'
+                    self.latest_log = f"{player.name} idzie do wiezienia za 3 dublety."
+                    self.add_history(self.latest_log)
                     return
                 else:
                     self.extra_turn = True
@@ -237,13 +248,11 @@ class MonopolyGame:
         
         if new_pos < old_pos and not player.in_jail:
             player.receive(200)
-            self.turn_message += " Przez START ($200)."
+            self.turn_message += " Przejscie przez START (+$200)."
 
         tile = self.board[player.position]
-        self.latest_log = f"{player.name} wyrzucił {d_sum} -> {tile['name']}."
-        if self.extra_turn:
-            self.latest_log += " (Dublet!)"
-        self.turn_message += f" Pole: {tile['name']}."
+        self.latest_log = f"{player.name} staje na: {tile['name']}."
+        self.turn_message += f" Stanales na: {tile['name']}."
         
         self.resolve_tile(player, tile, d_sum)
 
@@ -254,7 +263,7 @@ class MonopolyGame:
             if owner is None:
                 self.human_action_required = 'BUY'
                 self.current_tile_for_buy = tile
-                self.turn_message += f" Do kupienia za ${tile['price']}."
+                self.turn_message += f" Mozesz to kupic za ${tile['price']}."
                 return
             elif owner != player and not tile.get('is_mortgaged', False):
                 rent = self.get_rent(tile, owner, dice_sum)
@@ -271,13 +280,14 @@ class MonopolyGame:
             self.turn_message += msg
         elif t_type == 'go_to_jail':
             self.send_to_jail(player)
+            self.latest_log += " Idzie prosto do wiezienia!"
         elif t_type in ['chance', 'chest']:
             cards = self.chance_cards if t_type == 'chance' else self.chest_cards
             card = cards.pop(0)
             card[1](player)
             cards.append(card)
             self.turn_card = card[0]
-            self.latest_log += f" Karta: {card[0]}"
+            self.latest_log += f" Wyciaga karte."
 
         self.add_history(self.latest_log)
         self.human_action_required = 'ACKNOWLEDGE'
@@ -296,7 +306,7 @@ class MonopolyGame:
             self.human_action_required = 'ROLL'
             self.current_tile_for_buy = None
             self.turn_dice = None
-            self.turn_message = f"Tura gracza {self.players[self.current_player_index].name}. Rzucasz ponownie (Dublet)!"
+            self.turn_message = f"Rzucasz ponownie (Masz dublet)!"
             self.turn_card = ""
             return
 
@@ -318,7 +328,7 @@ class MonopolyGame:
         self.human_action_required = 'ROLL'
         self.current_tile_for_buy = None
         self.turn_dice = None
-        self.turn_message = f"Tura gracza {self.players[self.current_player_index].name}."
+        self.turn_message = f"Twoja tura."
         self.turn_card = ""
 
     def get_state(self):
@@ -347,6 +357,7 @@ class MonopolyGame:
                     "in_jail": p.in_jail,
                     "is_bankrupt": p.is_bankrupt,
                     "properties": len(p.properties),
+                    "get_out_of_jail_cards": p.get_out_of_jail_cards,
                     "is_human": p.is_human
                 } for p in self.players
             ],
