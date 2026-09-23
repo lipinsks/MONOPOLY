@@ -4,3 +4,5 @@ ngrok.log
 ngrok.tgz
 __pycache__
 venv
+nohup.out
+train.log

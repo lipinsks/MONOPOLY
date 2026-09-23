@@ -7,20 +7,21 @@ import time
 
 from monopoly import MonopolyGame, Player
 
-OUTPUT_FILE = "best_model.json"
-TOTAL_EPISODES = 50000
+OUTPUT_FILE = "best_model_MORE_EPISODES.json"
+TOTAL_EPISODES = 150000  # Optymalny, matematyczny próg nasycenia dla modelu
 SAVE_INTERVAL = 5000
 
 agent_instance = None
 
 def signal_handler(sig, frame):
-    print("\n[!] Przechwycono sygnał przerwania (Ctrl+C).")
+    print("\n[!] Przechwycono sygnał przerwania (Ctrl+C lub kill).")
     print("[!] Trwa bezpieczne zapisywanie modelu przed wyłączeniem...")
     if agent_instance:
         agent_instance.save_model(OUTPUT_FILE)
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 class SmartAIAgent:
     def __init__(self, name="SmartAI", learning_rate=0.1, discount_factor=0.9, exploration_rate=1.0):
@@ -71,7 +72,7 @@ class SmartAIAgent:
                     data = json.load(f)
                     self.q_table = data.get("q_table", {})
                 print(f" -> Wczytano istniejący model z {filepath}. Wznawiam naukę (stanów: {len(self.q_table)}).")
-                self.epsilon = max(0.1, 1.0 - (len(self.q_table) / 5000))
+                self.epsilon = max(0.05, 1.0 - (len(self.q_table) / 5000))
             except Exception as e:
                 print(f"Błąd odczytu {filepath}: {e}. Rozpoczynam z czystą pamięcią.")
         else:
@@ -80,9 +81,8 @@ class SmartAIAgent:
 def simulate_training_night():
     global agent_instance
     print("==================================================")
-    print(f" START TRENINGU AI: {TOTAL_EPISODES} EPIZODÓW")
+    print(f" START TRENINGU AI: OPTYMALNY PROG {TOTAL_EPISODES} GIER")
     print(f" PLIK WYJŚCIOWY: {OUTPUT_FILE}")
-    print(f" INTERWAŁ ZAPISU: Co {SAVE_INTERVAL} gier")
     print("==================================================")
     
     agent = SmartAIAgent(name="MasterAI")
@@ -167,7 +167,7 @@ def simulate_training_night():
             print(f"[{elapsed} min] Ukończono epizod: {episode}/{TOTAL_EPISODES} | Epsilon: {agent.epsilon:.3f}")
             agent.save_model(OUTPUT_FILE)
 
-    print("Trening zakończony osiągnięciem limitu epizodów.")
+    print("Trening zakończony osiągnięciem optymalnego limitu 150 000 epizodów.")
     agent.save_model(OUTPUT_FILE)
 
 if __name__ == "__main__":

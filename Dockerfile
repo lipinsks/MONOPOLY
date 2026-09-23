@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Otwieramy port 5000, na którym działa aplikacja
-EXPOSE 5000
+EXPOSE 5011
 
 # Komenda startowa uruchamiająca Gunicorna w trybie produkcyjnym (-w 1 jest kluczowe dla stanu RAM)
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:5011", "app:app"]
