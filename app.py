@@ -49,7 +49,6 @@ def run_game_loop():
                         
                     current_p = game.players[game.current_player_index]
                     
-                    # Logika handlu dzialajaca niezaleznie od tury
                     if game.active_trade:
                         target_name = game.active_trade['to']
                         target_p = next((p for p in game.players if p.name == target_name), None)
@@ -105,7 +104,6 @@ def run_game_loop():
                         game.next_player()
                         continue
                         
-                    # TURA BOTA
                     if not current_p.is_human:
                         req = game.human_action_required
                         valid_actions = []
@@ -390,6 +388,8 @@ def action(room_id):
     if action_type == 'MORTGAGE':
         tile_id = data.get('tile_id')
         tile = game.board[tile_id]
+        if tile.get('owner') != player:
+            return jsonify({"error": "Zastawiac mozesz tylko we wlasnej turze!"}), 400
         if not tile.get('is_mortgaged') and tile.get('houses', 0) == 0:
             tile['is_mortgaged'] = True
             tile['owner'].receive(tile['mortgage'])
@@ -400,6 +400,8 @@ def action(room_id):
     if action_type == 'UNMORTGAGE':
         tile_id = data.get('tile_id')
         tile = game.board[tile_id]
+        if tile.get('owner') != player:
+            return jsonify({"error": "Wykupowac mozesz tylko we wlasnej turze!"}), 400
         if tile.get('is_mortgaged'):
             cost = int(tile['mortgage'] * 1.1)
             if tile['owner'].money >= cost:
@@ -413,7 +415,9 @@ def action(room_id):
     if action_type == 'BUILD':
         tile_id = data.get('tile_id')
         tile = game.board[tile_id]
-        owner = tile['owner']
+        owner = tile.get('owner')
+        if owner != player:
+            return jsonify({"error": "Budowac mozesz tylko we wlasnej turze!"}), 400
         if tile.get('houses', 0) < 5:
             if owner.money < tile.get('house_cost', 0): return jsonify({"error": "Brak srodkow na budowe!"}), 400
             if game.has_monopoly(owner, tile['group']):
@@ -426,6 +430,9 @@ def action(room_id):
         
     if action_type == 'PROPOSE_TRADE':
         from_name = data.get('from_player')
+        if from_name != player.name:
+            return jsonify({"error": "Wymiany mozesz proponowac tylko we wlasnej turze!"}), 400
+            
         target_name = data.get('target_player')
         offer_tile_ids = data.get('offer_tile_ids', [])
         request_tile_ids = data.get('request_tile_ids', [])
@@ -437,8 +444,7 @@ def action(room_id):
         target_player = next((p for p in game.players if p.name == target_name), None)
         if not target_player or target_player.is_bankrupt: return jsonify({"error": "Nieprawidlowy gracz docelowy."}), 400
         
-        current_p = next((p for p in game.players if p.name == from_name), None)
-        if current_p and current_p.get_out_of_jail_cards < offer_cards: return jsonify({"error": "Nie masz tylu kart Wyjdz z wiezienia!"}), 400
+        if player.get_out_of_jail_cards < offer_cards: return jsonify({"error": "Nie masz tylu kart Wyjdz z wiezienia!"}), 400
         if target_player.get_out_of_jail_cards < request_cards: return jsonify({"error": "Gracz nie ma tylu kart Wyjdz z wiezienia!"}), 400
             
         game.active_trade = {

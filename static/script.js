@@ -521,11 +521,15 @@ function renderInventory(forceRedraw = false) {
         let html = `<div class="deed-header" style="background-color:${bg}; color:${txtColor}; font-size:0.85rem; padding:8px 4px; margin:0; border-bottom:2px solid #000;">${tile.name}</div>`;
         html += `<div style="padding: 8px; text-align:center; display:flex; flex-direction:column; justify-content:center; flex-grow:1;">`;
         
+        let canManage = (selectedPlayer === myPlayerName || !lastState.enforce_permissions) && (lastState.current_player === selectedPlayer);
+        
         if (tile.is_mortgaged) {
             html += `<p style="color:#d32f2f; font-weight:bold; margin-top:0; margin-bottom:10px;">ZASTAWIONE</p>`;
             const cost = Math.floor(tile.mortgage * 1.1);
-            if (selectedPlayer === myPlayerName || !lastState.enforce_permissions) {
+            if (canManage) {
                 html += `<button class="action-btn" style="background:#4caf50; padding:6px; font-size:0.85rem;" onclick="sendAction('UNMORTGAGE', ${tile.id})">Wykup ($${cost})</button>`;
+            } else {
+                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Zarzadzaj w swojej turze</p>`;
             }
         } else {
             if(tile.type === 'property') {
@@ -534,7 +538,7 @@ function renderInventory(forceRedraw = false) {
                 html += `<p style="margin-top:0; font-weight:bold; margin-bottom:10px;">Aktywna</p>`;
             }
             
-            if (selectedPlayer === myPlayerName || !lastState.enforce_permissions) {
+            if (canManage) {
                 html += `<div style="display:flex; flex-direction:column; gap:5px;">`;
                 
                 if (tile.type === 'property') {
@@ -554,6 +558,8 @@ function renderInventory(forceRedraw = false) {
                     html += `<p style="font-size:0.7rem; color:var(--text-color); margin:0;">Najpierw sprzedaj domy by zastawic.</p>`;
                 }
                 html += `</div>`;
+            } else {
+                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Zarzadzaj w swojej turze</p>`;
             }
         }
         html += `</div>`;
@@ -578,7 +584,9 @@ function renderHistory(logs) {
 function updateTradeCheckboxes() {
     if(!lastState) return;
     const targetSelect = document.getElementById('trade-target');
-    const proposerName = myPlayerName !== "Widz" ? myPlayerName : lastState.current_player;
+    let proposerName = lastState.enforce_permissions ? myPlayerName : lastState.current_player;
+    if (proposerName === "Widz") proposerName = lastState.current_player;
+    
     let targetOpts = lastState.players.filter(p => p.name !== proposerName && !p.is_bankrupt).map(p=>p.name);
     let targetStr = targetOpts.join('|');
     let currTargetStr = Array.from(targetSelect.options).map(o=>o.value).join('|');
@@ -812,7 +820,7 @@ async function sendAction(action, tile_id=null) {
         return; 
     }
     
-    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL', 'JAIL_CARD'];
+    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL', 'JAIL_CARD', 'BUILD', 'MORTGAGE', 'UNMORTGAGE'];
     if (turnActions.includes(action) && lastState.enforce_permissions && lastState.current_player !== myPlayerName) { 
         alert("To nie Twoja tura!"); 
         return; 
@@ -830,6 +838,13 @@ async function sendAction(action, tile_id=null) {
 async function proposeMultiTrade() {
     if(!currentRoomId) return;
     if(myPlayerName === 'Widz') { alert("Widzowie nie moga proponowac wymian!"); return; }
+    
+    let proposerName = lastState.enforce_permissions ? myPlayerName : lastState.current_player;
+    if (lastState.enforce_permissions && myPlayerName !== lastState.current_player) {
+        alert("Wymiany mozesz proponowac tylko w swojej turze!");
+        return;
+    }
+    
     const target = document.getElementById('trade-target').value;
     let offerIds = [];
     document.querySelectorAll('.offer-tile-chk:checked').forEach(el => { offerIds.push(parseInt(el.value)); });
@@ -844,7 +859,7 @@ async function proposeMultiTrade() {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            action: 'PROPOSE_TRADE', from_player: myPlayerName, target_player: target,
+            action: 'PROPOSE_TRADE', from_player: proposerName, target_player: target,
             offer_tile_ids: offerIds, request_tile_ids: requestIds, offer_money: offMoney, request_money: reqMoney,
             offer_cards: offCards, request_cards: reqCards
         })
