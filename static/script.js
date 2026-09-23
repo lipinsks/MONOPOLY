@@ -40,9 +40,13 @@ let lastState = null;
 
 function init() { 
     initTheme();
-    generatePlayerInputs(); // Od razu wstawiamy pola dla graczy
+    generatePlayerInputs();
     showLobby(); 
 }
+
+window.addEventListener('resize', () => {
+    if (document.getElementById('pawns-layer')) arrangePawns();
+});
 
 function showLobby() {
     currentRoomId = null;
@@ -202,7 +206,6 @@ async function renamePlayer(idx, oldName) {
     }
 }
 
-// USTAWIENIA MODAL
 function openSettings() {
     if(!lastState) return;
     document.getElementById('settings-modal').style.display = 'block';
@@ -264,24 +267,134 @@ async function endGame() {
     showLobby();
 }
 
+function getTileCenter(index) {
+    const tile = document.getElementById(`tile-${index}`);
+    if (!tile) return {x: 0, y: 0};
+    const x = tile.offsetLeft + tile.offsetWidth / 2;
+    const y = tile.offsetTop + tile.offsetHeight / 2;
+    return {x, y};
+}
+
+function arrangePawns() {
+    let tileGroups = {};
+    Array.from(document.getElementById('pawns-layer').children).forEach(pawn => {
+        if(pawn.dataset.animating === "true") return; 
+        let pos = pawn.dataset.pos;
+        if(!tileGroups[pos]) tileGroups[pos] = [];
+        tileGroups[pos].push(pawn);
+    });
+    
+    for(let pos in tileGroups) {
+        let pawns = tileGroups[pos];
+        let center = getTileCenter(parseInt(pos));
+        if(pawns.length === 1) {
+            pawns[0].style.left = center.x + 'px';
+            pawns[0].style.top = center.y + 'px';
+        } else {
+            let radius = 12;
+            let angleStep = (Math.PI * 2) / pawns.length;
+            pawns.forEach((pawn, idx) => {
+                let angle = idx * angleStep;
+                pawn.style.left = (center.x + Math.cos(angle) * radius) + 'px';
+                pawn.style.top = (center.y + Math.sin(angle) * radius) + 'px';
+            });
+        }
+    }
+}
+
+function animatePawn(pawnEl, startPos, endPos, inJail, callback) {
+    let steps = 0;
+    let directJump = false;
+    let stepDirection = 1; 
+    
+    if (inJail && endPos === 10) {
+        steps = 1; directJump = true;
+    } else if (endPos < startPos) {
+        if (startPos - endPos <= 12) {
+             steps = startPos - endPos;
+             stepDirection = -1;
+        } else {
+             steps = (endPos - startPos + 40) % 40; 
+        }
+    } else {
+        steps = endPos - startPos;
+    }
+    
+    if (steps === 0) { callback(); return; }
+    
+    let durationPerStep = directJump ? 500 : 200; 
+    let totalDuration = steps * durationPerStep;
+    if(totalDuration > 1500) totalDuration = 1500; 
+    
+    let startTime = performance.now();
+    
+    function step(currentTime) {
+        let elapsed = currentTime - startTime;
+        let progress = elapsed / totalDuration;
+        
+        if (progress >= 1) {
+            callback();
+            return;
+        }
+        
+        let currentStepFloat = progress * steps;
+        let currentStepIndex = Math.floor(currentStepFloat);
+        let stepProgress = currentStepFloat - currentStepIndex;
+        
+        let t1, t2;
+        if (directJump) {
+            t1 = startPos;
+            t2 = endPos;
+        } else {
+            t1 = (startPos + currentStepIndex * stepDirection + 40) % 40;
+            t2 = (startPos + (currentStepIndex + 1) * stepDirection + 40) % 40;
+        }
+        
+        let c1 = getTileCenter(t1);
+        let c2 = getTileCenter(t2);
+        
+        let baseX = c1.x + (c2.x - c1.x) * stepProgress;
+        let baseY = c1.y + (c2.y - c1.y) * stepProgress;
+        
+        let bounceHeight = directJump ? 80 : 30;
+        let bounce = Math.sin(stepProgress * Math.PI) * bounceHeight; 
+        
+        pawnEl.style.left = baseX + 'px';
+        pawnEl.style.top = (baseY - bounce) + 'px';
+        
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
 function renderBoard(data) {
     const boardEl = document.getElementById('board');
-    boardEl.innerHTML = '<div class="tile empty-center"><div class="logo-text">MONOPOLY</div></div>';
+    if(boardEl.innerHTML.trim() === '') {
+        boardEl.innerHTML = '<div class="tile empty-center"><div class="logo-text">MONOPOLY</div></div>';
+        
+        data.board.forEach((tile, index) => {
+            const div = document.createElement('div');
+            div.id = `tile-${index}`;
+            div.className = 'tile' + (tile.is_mortgaged ? ' mortgaged' : '');
+            div.onclick = () => showDeed(index);
+            
+            let col=1, row=1;
+            if (index <= 10) { col = 11 - index; row = 11; }
+            else if (index <= 20) { col = 1; row = 11 - (index - 10); }
+            else if (index <= 30) { col = 1 + (index - 20); row = 1; }
+            else { col = 11; row = 1 + (index - 30); }
+            div.style.gridColumn = col; div.style.gridRow = row;
+            
+            boardEl.appendChild(div);
+        });
+    }
     
     playerColors = {};
     data.players.forEach(p => { playerColors[p.name] = p.color; });
     
     data.board.forEach((tile, index) => {
-        const div = document.createElement('div');
+        const div = document.getElementById(`tile-${index}`);
         div.className = 'tile' + (tile.is_mortgaged ? ' mortgaged' : '');
-        div.onclick = () => showDeed(index);
-        
-        let col=1, row=1;
-        if (index <= 10) { col = 11 - index; row = 11; }
-        else if (index <= 20) { col = 1; row = 11 - (index - 10); }
-        else if (index <= 30) { col = 1 + (index - 20); row = 1; }
-        else { col = 11; row = 1 + (index - 30); }
-        div.style.gridColumn = col; div.style.gridRow = row;
         
         let html = '';
         if (tile.group && !tile.is_mortgaged) {
@@ -304,21 +417,60 @@ function renderBoard(data) {
             html += `<div class="owner-indicator" style="background-color: ${ownerColor}"></div>`;
         }
         
-        const pawns = data.players.filter(p => p.position === index && !p.is_bankrupt);
-        if (pawns.length > 0) {
-            html += `<div class="pawn-container">`;
-            pawns.forEach(p => {
-                const pawnColor = playerColors[p.name] || "#888";
-                const initialLetter = p.name.charAt(0).toUpperCase();
-                const isJumping = (p.name === data.current_player && data.turn_dice) ? 'jumping' : '';
-                html += `<div class="pawn ${isJumping}" style="background-color: ${pawnColor}" title="${p.name}">${initialLetter}</div>`;
-            });
-            html += `</div>`;
-        }
-        
         div.innerHTML = html;
-        boardEl.appendChild(div);
     });
+}
+
+function updatePawns(players) {
+    const layer = document.getElementById('pawns-layer');
+    if(!layer) return;
+    
+    let activeNames = players.filter(p => !p.is_bankrupt).map(p => p.name);
+    
+    Array.from(layer.children).forEach(child => {
+        if(!activeNames.includes(child.dataset.name)) {
+            child.remove();
+        }
+    });
+    
+    let needsArrange = false;
+    
+    players.filter(p => !p.is_bankrupt).forEach(p => {
+        let pawnId = 'pawn-' + p.name.replace(/\s+/g, '-');
+        let pawn = document.getElementById(pawnId);
+        
+        if(!pawn) {
+            pawn = document.createElement('div');
+            pawn.id = pawnId;
+            pawn.className = 'pawn';
+            pawn.dataset.name = p.name;
+            pawn.style.backgroundColor = p.color || '#888';
+            pawn.innerText = p.name.charAt(0).toUpperCase();
+            pawn.title = p.name;
+            pawn.style.position = 'absolute';
+            pawn.style.transform = 'translate(-50%, -50%)';
+            pawn.style.transition = 'none'; 
+            pawn.style.zIndex = 100;
+            layer.appendChild(pawn);
+            
+            pawn.dataset.pos = p.position;
+            needsArrange = true;
+        } else {
+            let oldPos = parseInt(pawn.dataset.pos);
+            if(oldPos !== p.position && pawn.dataset.animating !== "true") {
+                pawn.dataset.animating = "true";
+                pawn.dataset.pos = p.position; 
+                pawn.style.zIndex = 1000;
+                animatePawn(pawn, oldPos, p.position, p.in_jail, () => {
+                    pawn.dataset.animating = "false";
+                    pawn.style.zIndex = 100;
+                    arrangePawns();
+                });
+            }
+        }
+    });
+    
+    if(needsArrange) arrangePawns();
 }
 
 function renderInventory(forceRedraw = false) {
@@ -347,7 +499,6 @@ function renderInventory(forceRedraw = false) {
         return;
     }
     
-    // Karta wyjscia z wiezienia w ekwipunku
     if(pData && pData.get_out_of_jail_cards > 0) {
         const card = document.createElement('div');
         card.className = 'inv-card';
@@ -635,6 +786,7 @@ async function fetchState() {
     handleTurnPanel(data);
     handleTradeAlert(data);
     renderBoard(data);
+    updatePawns(data.players); 
     renderInventory();
     renderHistory(data.history_logs);
     updateTradeCheckboxes();

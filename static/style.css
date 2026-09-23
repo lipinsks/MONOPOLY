@@ -122,19 +122,37 @@ body {
     background-color: var(--bg-color);
 } 
 
+#board-wrapper {
+    position: relative;
+    width: min(100%, 86vh);
+    height: min(100%, 86vh);
+    margin: auto;
+    flex-shrink: 0;
+}
+
+#pawns-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 20;
+}
+
 /* IDEALNA, JEDNOLITA SIATKA 11x11 */
 .board { 
+    position: relative;
     display: grid; 
     grid-template-columns: repeat(11, minmax(0, 1fr)); 
     grid-template-rows: repeat(11, minmax(0, 1fr)); 
-    width: min(100%, 86vh); 
-    height: min(100%, 86vh);
+    width: 100%; 
+    height: 100%;
     background: #000; 
     border: 2px solid #222; 
     gap: 1px; 
     box-sizing: border-box; 
-    margin: auto;
-    flex-shrink: 0;
+    margin: 0;
 } 
 
 .tile { 
@@ -188,39 +206,19 @@ body {
     z-index: 2;
 } 
 
-.pawn-container { 
-    position: absolute; 
-    top: 50%; 
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex; 
-    gap: 1px; 
-    width: 100%; 
-    justify-content: center; 
-    z-index: 10; 
-    flex-wrap: wrap;
-    pointer-events: none;
-} 
-
 .pawn { 
-    width: clamp(10px, 1.8vmin, 18px); 
-    height: clamp(10px, 1.8vmin, 18px); 
+    width: clamp(12px, 2vmin, 20px); 
+    height: clamp(12px, 2vmin, 20px); 
     border-radius: 50%; 
-    border: 1px solid #fff; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.9); 
+    border: 2px solid #fff; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-size: clamp(6px, 1vmin, 10px); 
+    font-size: clamp(8px, 1.2vmin, 12px); 
     font-weight: bold; 
     color: #000;
 } 
-
-.pawn.jumping {
-    transform: translateY(-16px) scale(1.4);
-    box-shadow: 0 10px 15px rgba(0,0,0,0.5);
-    z-index: 100;
-}
 
 .buildings { position: absolute; top: 1px; display: flex; gap: 1px; z-index: 5; width: 100%; justify-content: center; } 
 .house { width: clamp(4px, 0.8vmin, 8px); height: clamp(4px, 0.8vmin, 8px); background-color: #4caf50; border: 1px solid #000; } 
@@ -339,14 +337,8 @@ body {
     .sidebar { order: 2; width: 100% !important; border-top: 2px solid var(--border-color); border-bottom: none; box-shadow: none; padding: 10px; } 
     .board-container { order: 1; width: 100%; padding: 0; justify-content: center; } 
     
-    .board { 
-        width: 100vw; 
-        height: 100vw; 
-        max-width: none; 
-        max-height: none; 
-        border-left: none; 
-        border-right: none; 
-    } 
+    #board-wrapper { width: 100vw; height: 100vw; max-width: none; max-height: none; }
+    .board { width: 100%; height: 100%; border-left: none; border-right: none; }
     
     .nav { flex-wrap: wrap; } 
     .mobile-hide { display: none; } 
