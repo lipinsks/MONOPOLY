@@ -82,6 +82,12 @@ body {
     box-sizing: border-box;
 } 
 
+#scoreboard {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
 .action-btn { 
     padding: 8px; 
     cursor: pointer; 
@@ -140,7 +146,6 @@ body {
     z-index: 20;
 }
 
-/* IDEALNA, JEDNOLITA SIATKA 11x11 */
 .board { 
     position: relative;
     display: grid; 
@@ -279,6 +284,13 @@ body {
 
 .console-left { display: flex; flex-direction: column; justify-content: center; gap: 5px; } 
 
+#turn-actions {
+    display: flex; /* domyslny widok zeby JS mogl dzialac naturalnie */
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .modal { 
     display: none; 
     position: fixed; 
@@ -329,12 +341,36 @@ body {
 .deed-row { display: flex; justify-content: space-between; margin-bottom: 4px; } 
 .deed-footer { font-size: 0.75rem; text-align: center; border-top: 1px solid #ccc; padding: 8px; margin-top: 8px; } 
 
+/* ===== MOBILE ===== */
 @media (max-width: 900px) { 
-    body { overflow-y: auto !important; height: auto !important; padding-bottom: 150px; } 
+    body { overflow-y: auto !important; height: auto !important; padding-bottom: 120px; } 
     #main-wrapper { flex-direction: column !important; overflow: visible !important; height: auto !important; } 
     .container { flex-direction: column !important; height: auto !important; overflow: visible !important; } 
     
-    .sidebar { order: 2; width: 100% !important; border-top: 2px solid var(--border-color); border-bottom: none; box-shadow: none; padding: 10px; } 
+    /* SUBTELNY PANEL GRACZY */
+    .sidebar { order: 2; width: 100% !important; border-top: 1px solid var(--border-color); border-bottom: none; box-shadow: none; padding: 5px; background: transparent; } 
+    .sidebar h1, .sidebar h2 { display: none; } /* Znikaja wielkie napisy */
+    
+    #scoreboard {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .player-card {
+        min-width: 120px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+        padding: 5px 8px;
+        font-size: 0.75rem;
+        background: var(--panel-bg);
+        border-radius: 4px;
+        border-left-width: 4px;
+    }
+
     .board-container { order: 1; width: 100%; padding: 0; justify-content: center; } 
     
     #board-wrapper { width: 100vw; height: 100vw; max-width: none; max-height: none; }
@@ -343,16 +379,21 @@ body {
     .nav { flex-wrap: wrap; } 
     .mobile-hide { display: none; } 
     
+    /* MNIEJSZY PASEK POWIADOMIEN */
     #bottom-console { 
         position: fixed; 
         bottom: 0; left: 0; right: 0; width: 100%; 
         flex-direction: column !important; 
-        gap: 8px; 
+        gap: 4px; 
         align-items: stretch !important; 
-        padding: 10px !important; 
+        padding: 6px 10px !important; 
         z-index: 9000; 
     } 
-    .console-left { justify-content: center; text-align: center; margin-right: 0 !important; } 
-    #turn-actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; justify-content: stretch; } 
-    #turn-actions > button { width: 100% !important; padding: 12px !important; font-size: 1rem !important; margin: 0; } 
+    .console-left { justify-content: center; text-align: center; margin-right: 0 !important; gap: 2px;} 
+    #console-title { font-size: 0.95rem !important; }
+    #turn-message-display { font-size: 0.85rem !important; }
+    
+    /* UKRYTO !important z display - przyciski beda znikac poslusnie */
+    #turn-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; justify-content: stretch; } 
+    #turn-actions > button { width: 100% !important; padding: 8px !important; font-size: 0.9rem !important; margin: 0; } 
 }

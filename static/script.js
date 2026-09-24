@@ -466,7 +466,6 @@ function updatePawns(players) {
                     pawn.dataset.animating = "false";
                     pawn.style.zIndex = 100;
                     arrangePawns();
-                    // ZMIANA: natychmiastowo wywolujemy rendering panelu zeby pokazaly sie opcje Kup/Pomin!
                     if (lastState) handleTurnPanel(lastState);
                 });
             }
@@ -670,7 +669,6 @@ function handleTradeAlert(data) {
 function handleTurnPanel(data) {
     const panel = document.getElementById('bottom-console');
     
-    // ZMIANA: Zawsze generuj kosci i karty na wierzchu, aby bylo je widac w trakcie lotu pionka
     const diceDisplay = document.getElementById('turn-dice-display');
     if(data.turn_dice) {
         let d1 = diceChars[data.turn_dice[0]];
@@ -691,12 +689,12 @@ function handleTurnPanel(data) {
 
     document.getElementById('turn-info-display').innerText = `Tura ${data.turns} /${data.max_turns}`;
 
-    // ZMIANA: Jesli jakikolwiek pionek sie rusza, ZATRZYMAJ wyswietlanie przyciskow!
     const isAnimating = Array.from(document.querySelectorAll('.pawn')).some(p => p.dataset.animating === "true");
     if (isAnimating) {
         document.getElementById('console-title').innerText = "Ruch...";
         document.getElementById('turn-message-display').innerText = "Pionek przemieszcza sie po planszy...";
-        document.getElementById('turn-actions').style.display = 'none'; // ukryj akcje!
+        // Ukrywamy siłowo podczas animacji
+        document.getElementById('turn-actions').style.setProperty('display', 'none', 'important'); 
         panel.style.borderTopColor = '#aaa';
         panel.style.display = 'flex';
         return; 
@@ -716,7 +714,7 @@ function handleTurnPanel(data) {
     
     if (data.active_trade) {
         document.getElementById('console-title').innerText = "Wymiana";
-        document.getElementById('turn-actions').style.display = 'none';
+        document.getElementById('turn-actions').style.setProperty('display', 'none', 'important');
         
         if (data.active_trade.to === myPlayerName) {
             document.getElementById('turn-message-display').innerText = "Oczekujaca oferta. Podejmij decyzje w oknie wyzej.";
@@ -756,12 +754,13 @@ function handleTurnPanel(data) {
         document.getElementById('modal-btn-pass').style.display = (data.human_action === 'BUY') ? 'block' : 'none';
         document.getElementById('modal-btn-ack').style.display = (data.human_action === 'ACKNOWLEDGE') ? 'block' : 'none';
         
-        document.getElementById('turn-actions').style.display = 'flex';
+        // Zdejmujemy inline style "none", pozwalamy dzialac z CSS 
+        document.getElementById('turn-actions').style.display = ''; 
         panel.style.display = 'flex';
     } else {
         document.getElementById('console-title').innerText = `Tura: ${data.current_player}`;
         panel.style.borderTopColor = '#555';
-        document.getElementById('turn-actions').style.display = 'none';
+        document.getElementById('turn-actions').style.setProperty('display', 'none', 'important');
         
         let mainLog = data.winner ? `WYGRYWA: ${data.winner}` : data.latest_log;
         document.getElementById('turn-message-display').innerText = data.waiting_for_human ? mainLog : data.turn_message;
@@ -817,7 +816,6 @@ async function fetchState() {
     
     document.getElementById('btn-restart').style.display = (isHost || !data.enforce_permissions) ? 'block' : 'none';
     
-    // ZMIANA KOLEJNOSCI: najpierw plansza i pionki (by ustalic status animacji), potem panel akcji!
     renderBoard(data);
     updatePawns(data.players); 
     handleTurnPanel(data);
@@ -826,6 +824,7 @@ async function fetchState() {
     renderHistory(data.history_logs);
     updateTradeCheckboxes();
     
+    // GENEROWANIE TABLICY WYNIKOW Z LZEJSZYMI FONTAMI Z CSS
     const sb = document.getElementById('scoreboard');
     sb.innerHTML = '';
     data.players.forEach((p, idx) => {
@@ -834,7 +833,7 @@ async function fetchState() {
         li.style.borderColor = p.color || "#888";
         let editIcon = (p.is_human && (isHost || !data.enforce_permissions)) ? `<span style="cursor:pointer; margin-left:10px;" title="Zmien nazwe" onclick="renamePlayer(${idx}, '${p.name}')">✏️</span>` : '';
         let aiIcon = p.is_human ? "" : "🤖 ";
-        li.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><strong style="font-size:1.1rem;">${aiIcon}${p.name} ${editIcon}</strong></div>Gotowka:$${p.money}<br>Posiadlosci:${p.properties}`;
+        li.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;"><strong>${aiIcon}${p.name} ${editIcon}</strong></div>Gotowka:$${p.money}<br>Posiadlosci:${p.properties}`;
         sb.appendChild(li);
     });
 }
@@ -853,8 +852,8 @@ async function sendAction(action, tile_id=null) {
         return; 
     }
 
-    // ZMIANA: Eager hiding - natychmiast ukrywamy przyciski po kliknieciu
-    document.getElementById('turn-actions').style.display = 'none';
+    // NATYCHMIASTOWE UKRYWANIE PO KLIKNIECIU
+    document.getElementById('turn-actions').style.setProperty('display', 'none', 'important');
 
     const res = await fetch(`/api/${currentRoomId}/action`, {
         method: 'POST',
