@@ -108,6 +108,37 @@ def run_game_loop():
                         req = game.human_action_required
                         valid_actions = []
                         
+                        # --- AI HEURYSTYKI BOTA ---
+                        
+                        # 1. Odkupowanie z hipoteki (UNMORTGAGE) - jesli ma bezpieczny zapas gotowki
+                        if req == 'ROLL' and current_p.money > 300:
+                            mortgaged = [t for t in current_p.properties if t.get('is_mortgaged')]
+                            if mortgaged:
+                                to_unmortgage = mortgaged[0]
+                                cost = int(to_unmortgage['mortgage'] * 1.1)
+                                if current_p.money >= cost + 200: 
+                                    current_p.pay(cost, game.board)
+                                    to_unmortgage['is_mortgaged'] = False
+                                    game.add_history(f"{current_p.name} wykupuje {to_unmortgage['name']} z hipoteki.")
+                                    
+                        # 2. Sprzedaz budynkow (SELL_HOUSE) - ratowanie budzetu prewencyjnie
+                        if req == 'ROLL' and current_p.money < 150:
+                            built = [t for t in current_p.properties if t.get('houses', 0) > 0]
+                            if built:
+                                valid_to_sell = []
+                                for t in built:
+                                    group_tiles = [gt for gt in current_p.properties if gt.get('group') == t.get('group')]
+                                    max_h = max(gt.get('houses', 0) for gt in group_tiles)
+                                    if t.get('houses', 0) == max_h:
+                                        valid_to_sell.append(t)
+                                if valid_to_sell:
+                                    t_sell = valid_to_sell[0]
+                                    sell_price = t_sell.get('house_cost', 50) // 2
+                                    current_p.receive(sell_price)
+                                    t_sell['houses'] -= 1
+                                    game.add_history(f"{current_p.name} sprzedaje budynek z {t_sell['name']}, zeby odzyskac gotowke.")
+
+                        # 3. Budowanie
                         if req == 'ROLL':
                             monopolies = [g for g in set([t.get('group') for t in current_p.properties if t.get('group')]) if game.has_monopoly(current_p, g)]
                             for group in monopolies:
@@ -119,10 +150,12 @@ def run_game_loop():
                                         if t.get('houses', 0) == min_houses and current_p.money > t.get('house_cost', 50) + 200:
                                             current_p.pay(t['house_cost'], game.board)
                                             t['houses'] += 1
-                                            game.latest_log = f"{current_p.name} buduje dom na {t['name']}."
+                                            b_type = "hotel" if t['houses'] == 5 else "dom"
+                                            game.latest_log = f"{current_p.name} buduje {b_type} na {t['name']}."
                                             game.add_history(game.latest_log)
                                             break 
 
+                        # 4. Zastawianie
                         if req == 'ROLL':
                             monopolies = [g for g in set([t.get('group') for t in current_p.properties if t.get('group')]) if game.has_monopoly(current_p, g)]
                             if monopolies:
@@ -135,6 +168,7 @@ def run_game_loop():
                                         current_p.receive(to_m['mortgage'])
                                         game.add_history(f"{current_p.name} zastawia {to_m['name']}.")
                         
+                        # 5. Handel wymianami
                         if req == 'ROLL' and random.random() < 0.2:
                             for group in ['saddlebrown', 'lightblue', 'mediumvioletred', 'darkorange', 'red', 'gold', 'green', 'blue']:
                                 owned = [t for t in current_p.properties if t.get('group') == group]
@@ -147,7 +181,7 @@ def run_game_loop():
                                         offer_tiles = []
                                         for t in current_p.properties:
                                             g = t.get('group')
-                                            if g and not game.has_monopoly(current_p, g):
+                                            if g and not game.has_monopoly(current_p, g) and t.get('houses', 0) == 0:
                                                 offer_tiles.append(t['id'])
                                                 offer_cash = missing['price']
                                                 break
@@ -168,6 +202,7 @@ def run_game_loop():
                         if game.active_trade:
                             continue
 
+                        # ODPYTYWANIE MODELU Q-LEARNING
                         if req == 'ROLL':
                             if current_p.in_jail:
                                 if current_p.get_out_of_jail_cards > 0:
@@ -390,6 +425,11 @@ def action(room_id):
         tile = game.board[tile_id]
         if tile.get('owner') != player:
             return jsonify({"error": "Zastawiac mozesz tylko we wlasnej turze!"}), 400
+            
+        group_tiles = [t for t in game.board if t.get('group') == tile.get('group')]
+        if any(t.get('houses', 0) > 0 for t in group_tiles):
+            return jsonify({"error": "Najpierw sprzedaj wszystkie budynki z tego koloru, aby zastawic!"}), 400
+            
         if not tile.get('is_mortgaged') and tile.get('houses', 0) == 0:
             tile['is_mortgaged'] = True
             tile['owner'].receive(tile['mortgage'])
@@ -418,14 +458,53 @@ def action(room_id):
         owner = tile.get('owner')
         if owner != player:
             return jsonify({"error": "Budowac mozesz tylko we wlasnej turze!"}), 400
-        if tile.get('houses', 0) < 5:
-            if owner.money < tile.get('house_cost', 0): return jsonify({"error": "Brak srodkow na budowe!"}), 400
-            if game.has_monopoly(owner, tile['group']):
-                owner.pay(tile['house_cost'], game.board)
-                tile['houses'] += 1
-                game.latest_log = f"{owner.name} buduje dom na {tile['name']}."
-                game.add_history(game.latest_log)
-            else: return jsonify({"error": "Wymagany caly kolor!"}), 400
+            
+        if tile.get('houses', 0) >= 5:
+            return jsonify({"error": "Maksymalna liczba budynkow zostala osiagnieta!"}), 400
+            
+        group_tiles = [t for t in game.board if t.get('group') == tile['group']]
+        if any(t.get('is_mortgaged') for t in group_tiles):
+            return jsonify({"error": "Nie mozesz budowac, poniewaz inna dzialka w tym kolorze jest zastawiona!"}), 400
+            
+        min_houses = min(t.get('houses', 0) for t in group_tiles)
+        if tile.get('houses', 0) > min_houses:
+            return jsonify({"error": "Musisz budowac rownomiernie! Najpierw postaw domy na pozostalych dzialkach."}), 400
+            
+        if owner.money < tile.get('house_cost', 0): 
+            return jsonify({"error": "Brak srodkow na budowe!"}), 400
+            
+        if game.has_monopoly(owner, tile['group']):
+            owner.pay(tile['house_cost'], game.board)
+            tile['houses'] += 1
+            b_type = "hotel" if tile['houses'] == 5 else "dom"
+            game.latest_log = f"{owner.name} buduje {b_type} na {tile['name']}."
+            game.add_history(game.latest_log)
+        else: 
+            return jsonify({"error": "Wymagany caly kolor!"}), 400
+        return jsonify({"status": "ok"})
+        
+    if action_type == 'SELL_HOUSE':
+        tile_id = data.get('tile_id')
+        tile = game.board[tile_id]
+        owner = tile.get('owner')
+        if owner != player:
+            return jsonify({"error": "Sprzedawac mozesz tylko we wlasnej turze!"}), 400
+            
+        if tile.get('houses', 0) == 0:
+            return jsonify({"error": "Brak budynkow do sprzedania na tej dzialce!"}), 400
+            
+        group_tiles = [t for t in game.board if t.get('group') == tile['group']]
+        max_houses = max(t.get('houses', 0) for t in group_tiles)
+        if tile.get('houses', 0) < max_houses:
+            return jsonify({"error": "Musisz sprzedawac rownomiernie! Najpierw sprzedaj z innej dzialki."}), 400
+            
+        sell_price = tile.get('house_cost', 0) // 2
+        owner.receive(sell_price)
+        tile['houses'] -= 1
+        
+        b_type = "hotel" if tile['houses'] == 4 else "dom"
+        game.latest_log = f"{owner.name} sprzedaje {b_type} z {tile['name']} za ${sell_price}."
+        game.add_history(game.latest_log)
         return jsonify({"status": "ok"})
         
     if action_type == 'PROPOSE_TRADE':
@@ -444,7 +523,13 @@ def action(room_id):
         target_player = next((p for p in game.players if p.name == target_name), None)
         if not target_player or target_player.is_bankrupt: return jsonify({"error": "Nieprawidlowy gracz docelowy."}), 400
         
-        if player.get_out_of_jail_cards < offer_cards: return jsonify({"error": "Nie masz tylu kart Wyjdz z wiezienia!"}), 400
+        for t_id in offer_tile_ids + request_tile_ids:
+            t_obj = game.board[t_id]
+            if t_obj.get('houses', 0) > 0:
+                return jsonify({"error": "Nie mozesz handlowac zabudowanymi dzialkami! Najpierw sprzedaj budynki."}), 400
+        
+        current_p = next((p for p in game.players if p.name == from_name), None)
+        if current_p and current_p.get_out_of_jail_cards < offer_cards: return jsonify({"error": "Nie masz tylu kart Wyjdz z wiezienia!"}), 400
         if target_player.get_out_of_jail_cards < request_cards: return jsonify({"error": "Gracz nie ma tylu kart Wyjdz z wiezienia!"}), 400
             
         game.active_trade = {

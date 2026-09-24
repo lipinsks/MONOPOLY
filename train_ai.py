@@ -7,8 +7,8 @@ import time
 
 from monopoly import MonopolyGame, Player
 
-OUTPUT_FILE = "best_model_MORE_EPISODES.json"
-TOTAL_EPISODES = 150000  # Optymalny, matematyczny próg nasycenia dla modelu
+OUTPUT_FILE = "best_model-2.json"
+TOTAL_EPISODES = 150000  
 SAVE_INTERVAL = 5000
 
 agent_instance = None
@@ -111,8 +111,56 @@ def simulate_training_night():
                 
             state_key = agent.get_state_key(game, current_p)
             req = game.human_action_required
-            valid_actions = []
             
+            # -- Wstrzykniecie nowych instynktow, zeby srodowisko odzwierciedlalo realna gre --
+            if req == 'ROLL' and current_p.money > 300:
+                mortgaged = [t for t in current_p.properties if t.get('is_mortgaged')]
+                if mortgaged:
+                    to_unmortgage = mortgaged[0]
+                    cost = int(to_unmortgage['mortgage'] * 1.1)
+                    if current_p.money >= cost + 200: 
+                        current_p.pay(cost, game.board)
+                        to_unmortgage['is_mortgaged'] = False
+                        
+            if req == 'ROLL' and current_p.money < 150:
+                built = [t for t in current_p.properties if t.get('houses', 0) > 0]
+                if built:
+                    valid_to_sell = []
+                    for t in built:
+                        group_tiles = [gt for gt in current_p.properties if gt.get('group') == t.get('group')]
+                        max_h = max(gt.get('houses', 0) for gt in group_tiles)
+                        if t.get('houses', 0) == max_h:
+                            valid_to_sell.append(t)
+                    if valid_to_sell:
+                        t_sell = valid_to_sell[0]
+                        sell_price = t_sell.get('house_cost', 50) // 2
+                        current_p.receive(sell_price)
+                        t_sell['houses'] -= 1
+
+            if req == 'ROLL':
+                monopolies = [g for g in set([t.get('group') for t in current_p.properties if t.get('group')]) if game.has_monopoly(current_p, g)]
+                for group in monopolies:
+                    group_tiles = [t for t in current_p.properties if t.get('group') == group]
+                    if any(t.get('is_mortgaged') for t in group_tiles): continue
+                    min_houses = min([t.get('houses', 0) for t in group_tiles])
+                    if min_houses < 5:
+                        for t in group_tiles:
+                            if t.get('houses', 0) == min_houses and current_p.money > t.get('house_cost', 50) + 200:
+                                current_p.pay(t['house_cost'], game.board)
+                                t['houses'] += 1
+                                break 
+                                
+                if monopolies:
+                    house_costs = [t['house_cost'] for t in current_p.properties if t.get('group') in monopolies]
+                    if house_costs and current_p.money < min(house_costs) + 150:
+                        standalone = [t for t in current_p.properties if t.get('group') not in monopolies and not t.get('is_mortgaged') and t.get('houses', 0) == 0]
+                        if standalone:
+                            to_m = standalone[0]
+                            to_m['is_mortgaged'] = True
+                            current_p.receive(to_m['mortgage'])
+            # ---------------------------------------------------------------------------------
+
+            valid_actions = []
             if req == 'ROLL':
                 if current_p.in_jail and current_p.money >= 50:
                     valid_actions = ['JAIL_PAY', 'JAIL_ROLL']

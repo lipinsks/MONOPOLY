@@ -4,7 +4,6 @@ let syncInterval = null;
 
 const diceChars = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']; 
 
-// INIT MOTYWU
 function initTheme() {
     let savedTheme = localStorage.getItem('monopoly_theme') || 'system';
     applyTheme(savedTheme);
@@ -529,7 +528,7 @@ function renderInventory(forceRedraw = false) {
             if (canManage) {
                 html += `<button class="action-btn" style="background:#4caf50; padding:6px; font-size:0.85rem;" onclick="sendAction('UNMORTGAGE', ${tile.id})">Wykup ($${cost})</button>`;
             } else {
-                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Zarzadzaj w swojej turze</p>`;
+                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Tylko w swojej turze</p>`;
             }
         } else {
             if(tile.type === 'property') {
@@ -547,8 +546,17 @@ function renderInventory(forceRedraw = false) {
                     const hasMonopoly = (groupTiles.length > 0 && groupTiles.length === ownedGroupTiles.length);
                     const isAnyMortgaged = groupTiles.some(t => t.is_mortgaged);
                     
-                    if (hasMonopoly && !isAnyMortgaged && tile.houses < 5) {
-                        html += `<button class="action-btn" style="background:#2196f3; padding:6px; font-size:0.85rem;" onclick="sendAction('BUILD', ${tile.id})">Buduj ($${tile.house_cost})</button>`;
+                    const minHouses = Math.min(...groupTiles.map(t => t.houses || 0));
+                    const maxHouses = Math.max(...groupTiles.map(t => t.houses || 0));
+                    
+                    if (hasMonopoly && !isAnyMortgaged) {
+                        if (tile.houses < 5 && tile.houses === minHouses) {
+                            html += `<button class="action-btn" style="background:#2196f3; padding:6px; font-size:0.85rem;" onclick="sendAction('BUILD', ${tile.id})">Buduj ($${tile.house_cost})</button>`;
+                        }
+                    }
+                    if (tile.houses > 0 && tile.houses === maxHouses) {
+                        let sellPrice = Math.floor(tile.house_cost / 2);
+                        html += `<button class="action-btn" style="background:#e91e63; padding:6px; font-size:0.85rem;" onclick="sendAction('SELL_HOUSE', ${tile.id})">Sprzedaj Bud. (+$${sellPrice})</button>`;
                     }
                 }
                 
@@ -559,7 +567,7 @@ function renderInventory(forceRedraw = false) {
                 }
                 html += `</div>`;
             } else {
-                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Zarzadzaj w swojej turze</p>`;
+                html += `<p style="font-size:0.75rem; color:#aaa; margin:0;">Tylko w swojej turze</p>`;
             }
         }
         html += `</div>`;
@@ -606,6 +614,7 @@ function updateTradeCheckboxes() {
     
     offerContainer.innerHTML = '';
     lastState.board.filter(t => t.owner === proposerName).forEach(t => {
+        if (t.houses > 0) return; 
         const chk = checkedOffers.includes(t.id.toString()) ? 'checked' : '';
         offerContainer.innerHTML += `
             <div style="display:flex; align-items:center; gap:8px;">
@@ -618,6 +627,7 @@ function updateTradeCheckboxes() {
     reqContainer.innerHTML = '';
     if(targetName) {
         lastState.board.filter(t => t.owner === targetName).forEach(t => {
+            if (t.houses > 0) return; 
             const chk = checkedReqs.includes(t.id.toString()) ? 'checked' : '';
             reqContainer.innerHTML += `
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -655,6 +665,19 @@ function handleTradeAlert(data) {
 
 function handleTurnPanel(data) {
     const panel = document.getElementById('bottom-console');
+    
+    // ZABEZPIECZENIE PRZED KLIKANIEM PODCZAS ANIMACJI
+    const isAnimating = Array.from(document.querySelectorAll('.pawn')).some(p => p.dataset.animating === "true");
+    if (isAnimating) {
+        document.getElementById('console-title').innerText = "Ruch...";
+        document.getElementById('turn-message-display').innerText = "Pionek w ruchu, prosze czekac...";
+        document.getElementById('turn-actions').style.display = 'none';
+        document.getElementById('turn-card-display').style.display = 'none';
+        document.getElementById('turn-dice-display').style.display = 'none';
+        panel.style.borderTopColor = '#aaa';
+        panel.style.display = 'flex';
+        return;
+    }
     
     const currP = data.players.find(p => p.name === data.current_player);
     const isCurrentPlayerHuman = currP ? currP.is_human : false;
@@ -820,7 +843,7 @@ async function sendAction(action, tile_id=null) {
         return; 
     }
     
-    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL', 'JAIL_CARD', 'BUILD', 'MORTGAGE', 'UNMORTGAGE'];
+    const turnActions = ['ROLL', 'BUY', 'PASS', 'ACKNOWLEDGE', 'JAIL_PAY', 'JAIL_ROLL', 'JAIL_CARD', 'BUILD', 'MORTGAGE', 'UNMORTGAGE', 'SELL_HOUSE'];
     if (turnActions.includes(action) && lastState.enforce_permissions && lastState.current_player !== myPlayerName) { 
         alert("To nie Twoja tura!"); 
         return; 

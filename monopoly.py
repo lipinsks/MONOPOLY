@@ -20,14 +20,31 @@ class Player:
             self.handle_debt(board)
 
     def handle_debt(self, board):
+        # Sprzedawaj budynki dopoki brakuje kasy, ale ROWNOMIERNIE
+        while self.money < 0:
+            built_tiles = [t for t in self.properties if t.get('houses', 0) > 0]
+            if not built_tiles:
+                break
+            
+            # Wyszukaj dzialke z ktorej mozna legalnie (rownomiernie) sprzedac budynek
+            valid_to_sell = []
+            for t in built_tiles:
+                group_tiles = [gt for gt in self.properties if gt.get('group') == t.get('group')]
+                max_h = max(gt.get('houses', 0) for gt in group_tiles)
+                if t.get('houses', 0) == max_h:
+                    valid_to_sell.append(t)
+            
+            if valid_to_sell:
+                t_sell = valid_to_sell[0]
+                self.money += t_sell.get('house_cost', 50) // 2
+                t_sell['houses'] -= 1
+            else:
+                break
+                
+        # Jesli wciaz brak kasy, zastawiaj puste dzialki
         for t in self.properties:
             if self.money >= 0: break
-            if t.get('houses', 0) > 0:
-                self.money += (t['houses'] * t.get('house_cost', 50)) // 2
-                t['houses'] = 0
-        for t in self.properties:
-            if self.money >= 0: break
-            if not t.get('is_mortgaged', False):
+            if not t.get('is_mortgaged', False) and t.get('houses', 0) == 0:
                 t['is_mortgaged'] = True
                 self.money += t.get('mortgage', t['price'] // 2)
                 
@@ -72,6 +89,7 @@ class MonopolyGame:
             self.history_logs.pop()
 
     def init_board(self):
+        # Ceny domow (house_cost) sa zaimplementowane zgodnie ze standardem (50, 100, 150, 200)
         return [
             {"id": 0, "name": "START", "type": "start"},
             {"id": 1, "name": "Mediter. Avenue", "type": "property", "group": "saddlebrown", "price": 60, "house_cost": 50, "rents": [2, 10, 30, 90, 160, 250], "mortgage": 30, "houses": 0, "is_mortgaged": False},
