@@ -13,7 +13,7 @@ FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fronte
 log = logging.getLogger('werkzeug')
 app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='/static')
 
-ENFORCE_PERMISSIONS = False
+ENFORCE_PERMISSIONS = True
 rooms = {}
 
 try:
