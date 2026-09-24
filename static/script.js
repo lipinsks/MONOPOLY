@@ -4,6 +4,7 @@ let syncInterval = null;
 
 const diceChars = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']; 
 
+// INIT MOTYWU
 function initTheme() {
     let savedTheme = localStorage.getItem('monopoly_theme') || 'system';
     applyTheme(savedTheme);
@@ -205,6 +206,7 @@ async function renamePlayer(idx, oldName) {
     }
 }
 
+// USTAWIENIA MODAL
 function openSettings() {
     if(!lastState) return;
     document.getElementById('settings-modal').style.display = 'block';
@@ -464,6 +466,8 @@ function updatePawns(players) {
                     pawn.dataset.animating = "false";
                     pawn.style.zIndex = 100;
                     arrangePawns();
+                    // ZMIANA: natychmiastowo wywolujemy rendering panelu zeby pokazaly sie opcje Kup/Pomin!
+                    if (lastState) handleTurnPanel(lastState);
                 });
             }
         }
@@ -666,17 +670,36 @@ function handleTradeAlert(data) {
 function handleTurnPanel(data) {
     const panel = document.getElementById('bottom-console');
     
-    // ZABEZPIECZENIE PRZED KLIKANIEM PODCZAS ANIMACJI
+    // ZMIANA: Zawsze generuj kosci i karty na wierzchu, aby bylo je widac w trakcie lotu pionka
+    const diceDisplay = document.getElementById('turn-dice-display');
+    if(data.turn_dice) {
+        let d1 = diceChars[data.turn_dice[0]];
+        let d2 = diceChars[data.turn_dice[1]];
+        diceDisplay.innerHTML = `<span class="dice-icon">${d1}</span><span class="dice-icon">${d2}</span>`;
+        diceDisplay.style.display = 'block';
+    } else { 
+        diceDisplay.style.display = 'none'; 
+    }
+
+    const cardDisplay = document.getElementById('turn-card-display');
+    if(data.turn_card) {
+        cardDisplay.innerText = "Karta: " + data.turn_card;
+        cardDisplay.style.display = 'block';
+    } else { 
+        cardDisplay.style.display = 'none'; 
+    }
+
+    document.getElementById('turn-info-display').innerText = `Tura ${data.turns} /${data.max_turns}`;
+
+    // ZMIANA: Jesli jakikolwiek pionek sie rusza, ZATRZYMAJ wyswietlanie przyciskow!
     const isAnimating = Array.from(document.querySelectorAll('.pawn')).some(p => p.dataset.animating === "true");
     if (isAnimating) {
         document.getElementById('console-title').innerText = "Ruch...";
-        document.getElementById('turn-message-display').innerText = "Pionek w ruchu, prosze czekac...";
-        document.getElementById('turn-actions').style.display = 'none';
-        document.getElementById('turn-card-display').style.display = 'none';
-        document.getElementById('turn-dice-display').style.display = 'none';
+        document.getElementById('turn-message-display').innerText = "Pionek przemieszcza sie po planszy...";
+        document.getElementById('turn-actions').style.display = 'none'; // ukryj akcje!
         panel.style.borderTopColor = '#aaa';
         panel.style.display = 'flex';
-        return;
+        return; 
     }
     
     const currP = data.players.find(p => p.name === data.current_player);
@@ -690,26 +713,6 @@ function handleTurnPanel(data) {
             isMyTurn = isCurrentPlayerHuman;
         }
     }
-    
-    const cardDisplay = document.getElementById('turn-card-display');
-    if(data.turn_card) {
-        cardDisplay.innerText = "Karta: " + data.turn_card;
-        cardDisplay.style.display = 'block';
-    } else { 
-        cardDisplay.style.display = 'none'; 
-    }
-
-    const diceDisplay = document.getElementById('turn-dice-display');
-    if(data.turn_dice) {
-        let d1 = diceChars[data.turn_dice[0]];
-        let d2 = diceChars[data.turn_dice[1]];
-        diceDisplay.innerHTML = `<span class="dice-icon">${d1}</span><span class="dice-icon">${d2}</span>`;
-        diceDisplay.style.display = 'block';
-    } else { 
-        diceDisplay.style.display = 'none'; 
-    }
-    
-    document.getElementById('turn-info-display').innerText = `Tura ${data.turns} /${data.max_turns}`;
     
     if (data.active_trade) {
         document.getElementById('console-title').innerText = "Wymiana";
@@ -814,10 +817,11 @@ async function fetchState() {
     
     document.getElementById('btn-restart').style.display = (isHost || !data.enforce_permissions) ? 'block' : 'none';
     
-    handleTurnPanel(data);
-    handleTradeAlert(data);
+    // ZMIANA KOLEJNOSCI: najpierw plansza i pionki (by ustalic status animacji), potem panel akcji!
     renderBoard(data);
     updatePawns(data.players); 
+    handleTurnPanel(data);
+    handleTradeAlert(data);
     renderInventory();
     renderHistory(data.history_logs);
     updateTradeCheckboxes();
@@ -848,6 +852,9 @@ async function sendAction(action, tile_id=null) {
         alert("To nie Twoja tura!"); 
         return; 
     }
+
+    // ZMIANA: Eager hiding - natychmiast ukrywamy przyciski po kliknieciu
+    document.getElementById('turn-actions').style.display = 'none';
 
     const res = await fetch(`/api/${currentRoomId}/action`, {
         method: 'POST',
