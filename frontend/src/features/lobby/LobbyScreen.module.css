@@ -1,0 +1,282 @@
+.screen {
+  min-height: 100dvh;
+  padding: clamp(40px, 9vh, 96px) 16px 64px;
+  background: radial-gradient(1100px 560px at 50% -12%, var(--bg-glow), transparent 70%), var(--bg);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(620px, 100%);
+  margin: 0 auto;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.tagline {
+  max-width: 470px;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  width: 200px;
+}
+
+.strip span {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.cardDescription {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.createForm {
+  display: flex;
+  gap: 10px;
+}
+
+.createForm > input {
+  flex: 1 1 auto;
+}
+
+.rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.roomsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.roomsTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live,
+.offline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-subtle);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.offline {
+  color: var(--warning);
+}
+
+.offline svg {
+  width: 15px;
+  height: 15px;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--positive);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--positive) 60%, transparent);
+  animation: live 2s ease-out infinite;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.room:hover {
+  border-color: var(--border-strong);
+}
+
+.roomIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.roomIcon[data-started] {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.roomIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.roomInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.roomName {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roomMeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.statusDot[data-started] {
+  background: var(--positive);
+}
+
+.skeleton {
+  height: 70px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--surface) 20%, var(--surface-hover) 50%, var(--surface) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 36px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.emptyTitle {
+  font-weight: 700;
+}
+
+.emptyText {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 599px) {
+  .screen {
+    padding-top: 36px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .createForm {
+    flex-direction: column;
+  }
+
+  .room {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .roomIcon {
+    display: none;
+  }
+}
+
+@keyframes live {
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

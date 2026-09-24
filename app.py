@@ -1,14 +1,17 @@
+import os
 import uuid
 import time
 import threading
 import logging
 import sys
 import random
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from monopoly import MonopolyGame
 
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
+
 log = logging.getLogger('werkzeug')
-app = Flask(__name__)
+app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='/static')
 
 ENFORCE_PERMISSIONS = False
 rooms = {}
@@ -271,7 +274,9 @@ thread.start()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if not os.path.isfile(os.path.join(FRONTEND_DIST, 'index.html')):
+        return "Frontend nie jest zbudowany. Uruchom: cd frontend && npm ci && npm run build", 503
+    return send_from_directory(FRONTEND_DIST, 'index.html')
 
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():

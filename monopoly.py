@@ -80,6 +80,8 @@ class MonopolyGame:
         self.turn_dice = None
         self.turn_message = "Oczekiwanie na ruch..."
         self.turn_card = ""
+        self.turn_card_type = None
+        self.roll_count = 0
         self.active_trade = None
         self.extra_turn = False
 
@@ -207,6 +209,7 @@ class MonopolyGame:
             else:
                 self.turn_message = f"Poczatek tury."
             self.turn_card = ""
+            self.turn_card_type = None
             return
 
         if self.waiting_for_human:
@@ -215,9 +218,11 @@ class MonopolyGame:
     def execute_roll_and_move(self, player):
         d1, d2 = random.randint(1, 6), random.randint(1, 6)
         d_sum = d1 + d2
+        self.roll_count += 1
         self.turn_dice = [d1, d2]
         self.turn_message = ""
         self.turn_card = ""
+        self.turn_card_type = None
 
         if player.in_jail:
             player.doubles_count = 0
@@ -305,6 +310,7 @@ class MonopolyGame:
             card[1](player)
             cards.append(card)
             self.turn_card = card[0]
+            self.turn_card_type = t_type
             self.latest_log += f" Wyciaga karte."
 
         self.add_history(self.latest_log)
@@ -326,6 +332,7 @@ class MonopolyGame:
             self.turn_dice = None
             self.turn_message = f"Rzucasz ponownie (Masz dublet)!"
             self.turn_card = ""
+            self.turn_card_type = None
             return
 
         self.players[self.current_player_index].doubles_count = 0
@@ -348,36 +355,61 @@ class MonopolyGame:
         self.turn_dice = None
         self.turn_message = f"Twoja tura."
         self.turn_card = ""
+        self.turn_card_type = None
 
     def get_state(self):
         active = [p for p in self.players if not p.is_bankrupt]
         winner = active[0].name if len(active) == 1 else None
+        if winner:
+            game_over_reason = "winner"
+        elif self.turns >= self.max_turns:
+            game_over_reason = "turn_limit"
+        else:
+            game_over_reason = None
+
+        ids_by_player = {id(p): i for i, p in enumerate(self.players)}
+        ids_by_name = {p.name: i for i, p in enumerate(self.players)}
+
+        active_trade = None
+        if self.active_trade:
+            active_trade = dict(self.active_trade)
+            active_trade["from_id"] = ids_by_name.get(active_trade["from"])
+            active_trade["to_id"] = ids_by_name.get(active_trade["to"])
+
         return {
             "turns": self.turns,
             "max_turns": self.max_turns,
             "latest_log": self.latest_log,
             "history_logs": self.history_logs,
             "winner": winner,
+            "game_over_reason": game_over_reason,
             "waiting_for_human": self.waiting_for_human,
             "human_action": self.human_action_required,
             "current_player": self.players[self.current_player_index].name,
+            "current_player_id": self.current_player_index,
             "current_player_in_jail": self.players[self.current_player_index].in_jail,
             "turn_dice": self.turn_dice,
             "turn_message": self.turn_message,
             "turn_card": self.turn_card,
-            "active_trade": self.active_trade,
+            "turn_card_type": self.turn_card_type,
+            "roll_count": self.roll_count,
+            "extra_turn": self.extra_turn,
+            "buy_tile_id": self.current_tile_for_buy['id'] if self.current_tile_for_buy else None,
+            "active_trade": active_trade,
             "players": [
                 {
+                    "id": i,
                     "name": p.name,
                     "color": p.color,
                     "money": p.money,
                     "position": p.position,
                     "in_jail": p.in_jail,
+                    "jail_turns": p.jail_turns,
                     "is_bankrupt": p.is_bankrupt,
                     "properties": len(p.properties),
                     "get_out_of_jail_cards": p.get_out_of_jail_cards,
                     "is_human": p.is_human
-                } for p in self.players
+                } for i, p in enumerate(self.players)
             ],
             "board": [
                 {
@@ -389,7 +421,9 @@ class MonopolyGame:
                     "house_cost": t.get('house_cost'),
                     "rents": t.get('rents'),
                     "mortgage": t.get('mortgage'),
+                    "amount": t.get('amount'),
                     "owner": t.get('owner').name if t.get('owner') else None,
+                    "owner_id": ids_by_player.get(id(t['owner'])) if t.get('owner') else None,
                     "houses": t.get('houses', 0),
                     "is_mortgaged": t.get('is_mortgaged', False)
                 } for t in self.board

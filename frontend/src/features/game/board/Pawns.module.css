@@ -1,0 +1,75 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pawn {
+  --pawn-width: max(15px, calc(var(--u) * 0.5));
+  --pawn-height: calc(var(--pawn-width) * 1.5);
+  position: absolute;
+  z-index: var(--depth);
+  width: var(--pawn-width);
+  height: var(--pawn-height);
+  margin: calc(var(--pawn-height) * -0.893) 0 0 calc(var(--pawn-width) / -2);
+  transition:
+    left 0.3s var(--ease-out),
+    top 0.3s var(--ease-out);
+}
+
+.pawn[data-moving] {
+  z-index: 400;
+  transition: none;
+}
+
+.shadow,
+.ring {
+  position: absolute;
+  top: 89.3%;
+  left: 50%;
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.shadow {
+  width: 122%;
+  height: 24%;
+  background: radial-gradient(closest-side, rgb(12 22 16 / 0.55), rgb(12 22 16 / 0.22) 60%, transparent);
+}
+
+.ring {
+  width: 158%;
+  height: 34%;
+  border: max(2px, calc(var(--u) * 0.05)) solid var(--pawn);
+  box-shadow: 0 0 calc(var(--u) * 0.12) var(--pawn);
+  animation: ring 1.6s ease-out infinite;
+}
+
+.figure {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 89.3%;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+@keyframes ring {
+  0% {
+    opacity: 1;
+    scale: 0.7;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.25;
+  }
+}

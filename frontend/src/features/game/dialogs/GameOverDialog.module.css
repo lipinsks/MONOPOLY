@@ -1,0 +1,58 @@
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rank {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-sunken);
+}
+
+.first {
+  border-color: color-mix(in srgb, #e3b21b 55%, var(--border));
+  background: color-mix(in srgb, #f3cf2c 12%, var(--surface));
+}
+
+.place {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  color: var(--text-subtle);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.first .place {
+  color: #c8960c;
+}
+
+.place svg {
+  width: 20px;
+  height: 20px;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worth {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.footnote {
+  margin-top: 14px;
+  color: var(--text-subtle);
+  font-size: 12.5px;
+}

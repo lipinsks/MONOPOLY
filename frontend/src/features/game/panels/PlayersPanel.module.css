@@ -1,0 +1,268 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 0 4px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    opacity 0.2s;
+}
+
+.current {
+  border-color: color-mix(in srgb, var(--player) 55%, var(--border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--player) 16%, transparent),
+    var(--shadow-sm);
+}
+
+.current::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: -1px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--player);
+}
+
+.bankrupt {
+  opacity: 0.6;
+}
+
+.bankrupt .name {
+  text-decoration: line-through;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 14.5px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.you,
+.bot {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.you {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.bot {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.bot svg {
+  width: 12px;
+  height: 12px;
+}
+
+.moneyRow {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.money {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.negative {
+  color: var(--danger);
+}
+
+.delta {
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  animation: delta 2.4s var(--ease-out) forwards;
+}
+
+.gain {
+  color: var(--positive);
+}
+
+.loss {
+  color: var(--danger);
+}
+
+.holdings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.set {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.complete {
+  background: color-mix(in srgb, var(--set) 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--set) 55%, transparent);
+}
+
+.cell {
+  width: 8px;
+  height: 11px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--set) 55%, transparent);
+}
+
+.filled {
+  background: var(--set);
+  box-shadow: none;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 1px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.chip svg {
+  width: 12px;
+  height: 12px;
+}
+
+.chipAccent {
+  background: color-mix(in srgb, var(--player) 16%, transparent);
+  color: var(--text);
+}
+
+.chipWarning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.chipDanger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--player);
+  animation: pulse 1.6s ease-out infinite;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: -4px -4px 0 0;
+}
+
+@keyframes delta {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--player) 70%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}

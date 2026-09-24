@@ -1,0 +1,174 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: offer-in 0.35s var(--ease-spring);
+}
+
+.actionable {
+  border-color: color-mix(in srgb, var(--positive) 50%, var(--border-strong));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--positive) 14%, transparent),
+    var(--shadow-md);
+}
+
+.floating {
+  position: fixed;
+  top: calc(var(--topbar-height) + 8px);
+  right: 8px;
+  left: 8px;
+  z-index: 40;
+  box-shadow: var(--shadow-lg);
+}
+
+.condensed {
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.actionable .icon {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.heading {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.parties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 14.5px;
+  font-weight: 750;
+}
+
+.arrow {
+  width: 15px;
+  height: 15px;
+  color: var(--text-subtle);
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.sideTitle {
+  color: var(--text-subtle);
+  font-size: 11.5px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.money {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cards {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.cards svg {
+  width: 14px;
+  height: 14px;
+}
+
+.nothing {
+  color: var(--text-subtle);
+  font-size: 13.5px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes offer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}

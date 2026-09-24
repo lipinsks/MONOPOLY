@@ -1,0 +1,45 @@
+.pair {
+  display: inline-flex;
+  gap: calc(var(--size) * 0.22);
+}
+
+.die {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  width: var(--size);
+  height: var(--size);
+  padding: calc(var(--size) * 0.14);
+  border-radius: calc(var(--size) * 0.22);
+  background: linear-gradient(155deg, #ffffff, #efeae0);
+  box-shadow:
+    inset 0 calc(var(--size) * -0.06) 0 rgb(0 0 0 / 0.08),
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 calc(var(--size) * 0.1) calc(var(--size) * 0.25) rgb(0 0 0 / 0.22);
+  animation: tumble 0.62s var(--ease-out) both;
+  animation-delay: var(--delay);
+}
+
+.pip {
+  place-self: center;
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+}
+
+.visible {
+  background: radial-gradient(circle at 35% 30%, #4a4f55, #15181b 70%);
+}
+
+@keyframes tumble {
+  0% {
+    transform: translateY(calc(var(--size) * -0.6)) rotate(-200deg) scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(calc(var(--size) * 0.06)) rotate(12deg) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}

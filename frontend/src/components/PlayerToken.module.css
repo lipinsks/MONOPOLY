@@ -1,0 +1,16 @@
+.token {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, #ffffff 26%, var(--token)), var(--token) 62%);
+  color: var(--token-ink);
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.14),
+    0 0 0 2px color-mix(in srgb, var(--token) 30%, transparent);
+}
+
+.muted {
+  filter: grayscale(1);
+  opacity: 0.55;
+}

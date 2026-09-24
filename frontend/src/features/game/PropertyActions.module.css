@@ -1,0 +1,17 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.amount {
+  margin-left: 4px;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  flex-basis: 100%;
+  color: var(--text-subtle);
+  font-size: 12px;
+}

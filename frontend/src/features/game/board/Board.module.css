@@ -1,0 +1,51 @@
+.board {
+  --u: calc(var(--board-size) / 12.2);
+  --line: max(1px, calc(var(--u) * 0.028));
+  --board-radius: calc(var(--u) * 0.18);
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: 1.6fr repeat(9, 1fr) 1.6fr;
+  grid-template-rows: 1.6fr repeat(9, 1fr) 1.6fr;
+  width: var(--board-size);
+  height: var(--board-size);
+  border-radius: var(--board-radius);
+  background: var(--board-line);
+  box-shadow:
+    0 0 0 calc(var(--u) * 0.07) var(--board-line),
+    0 calc(var(--u) * 0.25) calc(var(--u) * 0.9) rgb(0 0 0 / 0.32);
+  font-family: var(--font-display);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.board > button:nth-child(1) {
+  border-bottom-right-radius: var(--board-radius);
+}
+
+.board > button:nth-child(11) {
+  border-bottom-left-radius: var(--board-radius);
+}
+
+.board > button:nth-child(21) {
+  border-top-left-radius: var(--board-radius);
+}
+
+.board > button:nth-child(31) {
+  border-top-right-radius: var(--board-radius);
+}
+
+.center {
+  position: relative;
+  grid-row: 2 / 11;
+  grid-column: 2 / 11;
+  min-width: 0;
+  min-height: 0;
+  background: radial-gradient(circle at 50% 44%, var(--board-center) 35%, var(--board-center-edge));
+  outline: var(--line) solid var(--board-line);
+  outline-offset: calc(var(--line) / -2);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  user-select: text;
+  -webkit-user-select: text;
+}

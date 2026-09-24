@@ -1,0 +1,88 @@
+.center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--u) * 0.45);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.32);
+  width: 100%;
+  max-width: calc(var(--u) * 6.6);
+}
+
+.withPanel .content {
+  max-width: min(calc(var(--u) * 6.8), 460px);
+}
+
+.content .logo {
+  --plate-size: calc(var(--u) * 0.6);
+  rotate: -4deg;
+}
+
+.deck {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.06);
+  width: calc(var(--u) * 2.1);
+  height: calc(var(--u) * 1.4);
+  border: calc(var(--u) * 0.035) dashed color-mix(in srgb, var(--deck) 70%, #1d2a23);
+  border-radius: calc(var(--u) * 0.14);
+  background: color-mix(in srgb, var(--deck) 16%, transparent);
+  color: color-mix(in srgb, var(--deck) 80%, #1d2a23);
+  font-family: var(--font-display);
+  rotate: -45deg;
+}
+
+.chest {
+  --deck: var(--chest);
+  top: calc(var(--u) * 0.85);
+  left: calc(var(--u) * 0.1);
+}
+
+.chance {
+  --deck: var(--chance);
+  right: calc(var(--u) * 0.1);
+  bottom: calc(var(--u) * 0.85);
+}
+
+.deckMark {
+  font-size: calc(var(--u) * 0.62);
+  font-weight: 800;
+  line-height: 0.8;
+}
+
+.deckIcon {
+  width: calc(var(--u) * 0.5);
+  height: calc(var(--u) * 0.5);
+  stroke-width: 1.8;
+}
+
+.deckLabel {
+  font-size: calc(var(--u) * 0.17);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.withPanel .deck {
+  opacity: 0.55;
+}
+
+.compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.2);
+  width: 100%;
+  max-width: calc(var(--u) * 5.6);
+}
